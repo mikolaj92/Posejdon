@@ -1,0 +1,22 @@
+prompt_id: "posejdon-review-sensitive-entities"
+version: "1.0.0"
+name: "Review Sensitive Entities"
+subsystem: "posejdon"
+kind: "user"
+template: |
+  {"task": "review_sensitive_entities", "text_window": {{ text_window | tojson }}, "allowed_entity_types": {{ allowed_entity_types | tojson }}, "entities": {{ entities | tojson }}}
+variable_schema:
+  text_window:
+    type: "string"
+    required: true
+    max_length: 4000
+  allowed_entity_types:
+    type: "list"
+    required: true
+  entities:
+    type: "list"
+    required: true
+audit_fields:
+  created_at: "2026-05-01T00:00:00Z"
+  author: "temida-agent"
+  review_status: "approved"

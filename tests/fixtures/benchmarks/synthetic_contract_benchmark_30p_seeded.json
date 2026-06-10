@@ -1,0 +1,56 @@
+{
+  "benchmark_id": "synthetic_contract_benchmark_30p_seeded",
+  "source_artifact": "examples/seeded_local/pdf/synthetic_contract_benchmark_30p_seeded.pdf",
+  "document_kind": "pdf",
+  "expectations": {
+    "llm_disabled_must_pass": true,
+    "leakage_findings_must_be_empty": true,
+    "minimum_segment_count": 30
+  },
+  "required_raw_surfaces": [
+    "Paweł Lisowski",
+    "Marta Wójcik",
+    "Piotr Malec",
+    "Karolina Bednarek",
+    "Jan Kowalski",
+    "Anna Nowak",
+    "p.lisowski.ops@fastmail.com",
+    "marta.wojcik.koordynacja@wp.pl",
+    "piotr.malec.private@icloud.com",
+    "karolina.bednarek@demo.pl",
+    "jan.kowalski.test@protonmail.com",
+    "anna.nowak.biuro@outlook.com",
+    "+48 728 100 200",
+    "+48 514 222 333",
+    "+48 692 888 111",
+    "+48 600 700 800",
+    "+48 501 234 567",
+    "ul. Długa 41/2",
+    "ul. Szewska 9/3",
+    "ul. Lipowa 18/7"
+  ],
+  "required_followup_surfaces": [
+    "Paweł",
+    "P. Lisowski",
+    "Lisowski",
+    "Karolina",
+    "Bednarek",
+    "Mazur",
+    "Nowak",
+    "Kowalski",
+    "Piotr",
+    "Malec"
+  ],
+  "tracked_gap_surfaces": [
+    "63 1240 5998 1111 0000 9876 5432",
+    "41 1140 2004 0000 3102 1234 5678",
+    "52 1090 2590 0000 0001 2345 6789",
+    "GD 224AC",
+    "KR 7MZ18",
+    "DW 4KJ92",
+    "WA 8L331",
+    "ThinkPad-JK",
+    "iPhone-Anna",
+    "host-waw-01"
+  ]
+}

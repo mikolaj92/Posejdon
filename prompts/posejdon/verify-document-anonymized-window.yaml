@@ -1,0 +1,18 @@
+prompt_id: "posejdon-verify-document-anonymized-window"
+version: "1.0.0"
+name: "Verify Document Anonymized Window"
+subsystem: "posejdon"
+kind: "user"
+template: |
+  {"task": "verify_document_is_anonymized_window", "model_requirement": "Use Qwen3.5 verification behavior.", "allowed_entity_types": {{ allowed_entity_types | tojson }}, "segments": {{ segments | tojson }}}
+variable_schema:
+  allowed_entity_types:
+    type: "list"
+    required: true
+  segments:
+    type: "list"
+    required: true
+audit_fields:
+  created_at: "2026-05-01T00:00:00Z"
+  author: "temida-agent"
+  review_status: "approved"
