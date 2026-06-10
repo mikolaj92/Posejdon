@@ -25,7 +25,12 @@ class AnonymizationResult:
 
 
 class TextAnonymizer:
-    def __init__(self, gliner_enabled: bool = False) -> None:
+    def __init__(
+        self,
+        gliner_enabled: bool = False,
+        gliner_model: str = "urchade/gliner_small-v2.1",
+        gliner_threshold: float = 0.45,
+    ) -> None:
         self.detectors = []
 
         # Always include RegexDetector
@@ -42,7 +47,9 @@ class TextAnonymizer:
         # Include GlinerDetector if requested and available
         if gliner_enabled:
             with contextlib.suppress(Exception):
-                self.detectors.append(GLiNERDetector())
+                self.detectors.append(
+                    GLiNERDetector(model_name=gliner_model, threshold=gliner_threshold)
+                )
 
         self.fusion = DetectorFusion()
 

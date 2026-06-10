@@ -13,9 +13,11 @@ class GLiNERDetector:
         model_name: str = "urchade/gliner_small-v2.1",
         *,
         local_files_only: bool = True,
+        threshold: float = 0.45,
     ) -> None:
         self.model_name = model_name
         self.local_files_only = local_files_only
+        self.threshold = threshold
         self._model = None
         try:
             from gliner import GLiNER
@@ -44,6 +46,9 @@ class GLiNERDetector:
             raw = item["text"]
             start = int(item["start"])
             end = int(item["end"])
+            score = float(item.get("score", 0.65))
+            if score < self.threshold:
+                continue
             digest = hashlib.sha1(
                 f"gliner|{item['label']}|{start}|{end}|{raw}".encode(),
                 usedforsecurity=False,
@@ -54,7 +59,7 @@ class GLiNERDetector:
                     entity_type=str(item["label"]).upper(),
                     raw_text=raw,
                     normalized_text=raw.strip(),
-                    confidence=float(item.get("score", 0.65)),
+                    confidence=score,
                     source_detector=self.name,
                     start_offset=start,
                     end_offset=end,
