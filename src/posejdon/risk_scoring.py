@@ -74,8 +74,6 @@ def calculate_reidentification_risk(
         metrics={
             "total_entities": len(entities),
             "unique_types": len(entity_types),
-            "entities_per_type": {
-                t: len(e) for t, e in entity_types.items()
-            },
+            "entities_per_type": {t: len(e) for t, e in entity_types.items()},
         },
     )

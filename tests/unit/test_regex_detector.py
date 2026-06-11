@@ -83,15 +83,15 @@ def test_regex_detector_finds_person_names_in_strong_document_contexts() -> None
     detector = RegexDetector(allowed_entity_types={"PERSON"})
 
     entities = detector.detect(
-        "Paweł Lisowski, dalej jako strona operacyjna, potwierdza ustalenia. "
-        "Materiały przekazane przez Karolina Bednarek pozostają w aktach.\n"
+        "Paweł Lisowski, dalej jako Zamawiający, potwierdza ustalenia. "
+        "Materiały przekazane przez Karolinę Bednarek pozostają w aktach.\n"
         "Jan Kowalski\n"
         "Warszawa\n"
         "ul. Jasna 12/4"
     )
 
     names = {entity.raw_text for entity in entities if entity.entity_type == "PERSON"}
-    assert {"Paweł Lisowski", "Karolina Bednarek", "Jan Kowalski"}.issubset(names)
+    assert {"Paweł Lisowski", "Karolinę Bednarek", "Jan Kowalski"}.issubset(names)
 
 
 def test_regex_detector_does_not_treat_headings_as_person_names() -> None:

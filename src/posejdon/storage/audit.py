@@ -42,21 +42,16 @@ class AuditStore:
             ).hexdigest()
             if not hmac.compare_digest(stored_hash, expected):
                 raise ValueError(
-                    f"Audit trail {audit_id} has been tampered with. "
-                    "Hash mismatch detected."
+                    f"Audit trail {audit_id} has been tampered with. Hash mismatch detected."
                 )
         trail = AnonymizationAuditTrail.model_validate(data)
         return trail
 
-    def _compute_tamper_hash(
-        self, trail: AnonymizationAuditTrail
-    ) -> AnonymizationAuditTrail:
+    def _compute_tamper_hash(self, trail: AnonymizationAuditTrail) -> AnonymizationAuditTrail:
         payload = trail.model_dump()
         payload.pop("tamper_evidence_hash", None)
         canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
-        hash_value = hmac.new(
-            self._secret.encode(), canonical.encode(), hashlib.sha256
-        ).hexdigest()
+        hash_value = hmac.new(self._secret.encode(), canonical.encode(), hashlib.sha256).hexdigest()
         return trail.model_copy(update={"tamper_evidence_hash": hash_value})
 
     def list_all(self) -> list[AuditRecord]:

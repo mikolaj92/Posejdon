@@ -85,7 +85,7 @@ DEFAULT_REGEX_RULES: tuple[tuple[str, str, str, str, float, int, int, str], ...]
     ),
     (
         "PHONE",
-        r"(?:(?<!\d)(?:\+?48[\s-]*)?(?:\d[\s-]*){8}\d(?!\d))",
+        r"(?:(?<!\d)(?:(?:\(\+?48\)|\+?48|0048)[\s-]*)?(?:\d[\s-]*){8}\d(?!\d))",
         "digits",
         "phone",
         0.96,

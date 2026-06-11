@@ -36,9 +36,7 @@ class EntityAuditEntry(BaseModel):
                     entity_type=entity_type,
                     count=len(type_entities),
                     confidence_mean=(
-                        round(sum(confidences) / len(confidences), 4)
-                        if confidences
-                        else 0.0
+                        round(sum(confidences) / len(confidences), 4) if confidences else 0.0
                     ),
                     confidence_median=round(median(confidences), 4) if confidences else 0.0,
                     confidence_min=round(min(confidences), 4) if confidences else 0.0,

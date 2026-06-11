@@ -33,12 +33,20 @@ class TestPosejdonPerformance:
 
         entities = [
             SensitiveEntity(
-                entity_id="e1", entity_type="PERSON", raw_text="John Doe",
-                normalized_text="john doe", confidence=0.9, source_detector="regex",
+                entity_id="e1",
+                entity_type="PERSON",
+                raw_text="John Doe",
+                normalized_text="john doe",
+                confidence=0.9,
+                source_detector="regex",
             ),
             SensitiveEntity(
-                entity_id="e2", entity_type="ADDRESS", raw_text="123 Main St",
-                normalized_text="123 main st", confidence=0.9, source_detector="regex",
+                entity_id="e2",
+                entity_type="ADDRESS",
+                raw_text="123 Main St",
+                normalized_text="123 main st",
+                confidence=0.9,
+                source_detector="regex",
             ),
         ]
 

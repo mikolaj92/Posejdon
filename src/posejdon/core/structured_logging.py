@@ -8,11 +8,12 @@ class JSONFormatter(logging.Formatter):
             "timestamp": self.formatTime(record),
             "level": record.levelname,
             "name": record.name,
-            "message": record.getMessage()
+            "message": record.getMessage(),
         }
         if record.exc_info:
             log_data["exception"] = self.formatException(record.exc_info)
         return json.dumps(log_data)
+
 
 def get_structured_logger(name: str) -> logging.Logger:
     logger = logging.getLogger(name)
@@ -21,5 +22,6 @@ def get_structured_logger(name: str) -> logging.Logger:
         handler.setFormatter(JSONFormatter())
         logger.addHandler(handler)
     return logger
+
 
 __all__ = ["get_structured_logger"]

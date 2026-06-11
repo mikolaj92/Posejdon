@@ -3,18 +3,13 @@ from __future__ import annotations
 import contextlib
 from collections import Counter
 
-from posejdon.core.enums import DocumentKind, PolicyProfileName, ReplacementKind
+from posejdon.core.enums import DocumentKind, PolicyProfileName
 from posejdon.detectors.fusion import DetectorFusion
 from posejdon.detectors.gliner_detector import GLiNERDetector
 from posejdon.detectors.presidio_detector import PresidioDetector
 from posejdon.detectors.regex_detector import RegexDetector
 from posejdon.detectors.spacy_detector import SpacyDetector
-from posejdon.domain.models import MetadataPolicy
-from posejdon.domain.policies import (
-    ConfidenceThresholds,
-    OutputNamingRules,
-    PolicyProfileDefinition,
-)
+from posejdon.domain.policies import DEFAULT_POLICY_PROFILES
 from posejdon.planners.replacement_planner import ReplacementPlanner
 
 
@@ -53,27 +48,9 @@ class TextAnonymizer:
 
         self.fusion = DetectorFusion()
 
-        # Default policy: replace everything with placeholders (irreversible mode by default)
-        self.policy = PolicyProfileDefinition(
-            name=PolicyProfileName.EXTERNAL_IRREVERSIBLE,
-            entity_classes=[
-                "PERSON",
-                "PL_PESEL",
-                "PL_NIP",
-                "PL_REGON",
-                "EMAIL",
-                "PHONE_NUMBER",
-                "BANK_ACCOUNT",
-                "PAYMENT_CARD",
-            ],
-            replacement_style=ReplacementKind.CATEGORY_PLACEHOLDER,
-            output_naming=OutputNamingRules(suffix="_anonymized"),
-            metadata_policy=MetadataPolicy(),
-            llm_review_allowed=False,
-            confidence_thresholds=ConfidenceThresholds(
-                accept_threshold=0.85,
-                review_threshold=0.60,
-            ),
+        # Compatibility anonymizer stays local-only: regex/optional local detectors, no LLM review.
+        self.policy = DEFAULT_POLICY_PROFILES[PolicyProfileName.EXTERNAL_IRREVERSIBLE].model_copy(
+            update={"llm_review_allowed": False}
         )
         self.planner = ReplacementPlanner(policy=self.policy)
 

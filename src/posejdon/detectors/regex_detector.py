@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import re
+
 from posejdon.domain.entities import SensitiveEntity
 from posejdon.storage.regex_catalog import RegexCatalogStore
 
 from . import regex_support
-from .regex_support import RegexRule, build_entity_id
+from .regex_support import POLISH_FIRST_NAME_FORMS, RegexRule, build_entity_id
 
 normalize_digits = regex_support.normalize_digits
 normalize_email = regex_support.normalize_email
@@ -13,111 +15,6 @@ validate_iban = regex_support.validate_iban
 validate_nip = regex_support.validate_nip
 validate_pesel = regex_support.validate_pesel
 validate_phone = regex_support.validate_phone
-
-
-
-POLISH_FIRST_NAMES = (
-    "Adam",
-    "Adrian",
-    "Agnieszka",
-    "Aleksandra",
-    "Andrzej",
-    "Anna",
-    "Antoni",
-    "Barbara",
-    "Bartosz",
-    "Beata",
-    "Bogdan",
-    "Cezary",
-    "Damian",
-    "Daniel",
-    "Dariusz",
-    "Dorota",
-    "Ewa",
-    "Filip",
-    "Grzegorz",
-    "Hanna",
-    "Jakub",
-    "Jan",
-    "Joanna",
-    "Jolanta",
-    "Kamil",
-    "Karolina",
-    "Katarzyna",
-    "Kinga",
-    "Krzysztof",
-    "Łukasz",
-    "Magdalena",
-    "Małgorzata",
-    "Marcin",
-    "Marek",
-    "Maria",
-    "Mariusz",
-    "Mateusz",
-    "Michał",
-    "Monika",
-    "Natalia",
-    "Paweł",
-    "Piotr",
-    "Rafał",
-    "Robert",
-    "Stanisław",
-    "Tomasz",
-    "Wojciech",
-    "Zbigniew",
-)
-
-POLISH_FIRST_NAME_FORMS = POLISH_FIRST_NAMES + (
-    "Adama",
-    "Agnieszki",
-    "Aleksandry",
-    "Andrzeja",
-    "Annę",
-    "Anny",
-    "Annie",
-    "Antoniego",
-    "Barbary",
-    "Bartosza",
-    "Beaty",
-    "Bogdana",
-    "Cezarego",
-    "Damiana",
-    "Daniela",
-    "Dariusza",
-    "Doroty",
-    "Ewy",
-    "Filipa",
-    "Grzegorza",
-    "Hanny",
-    "Jakuba",
-    "Jana",
-    "Joanny",
-    "Jolanty",
-    "Kamila",
-    "Karoliny",
-    "Katarzyny",
-    "Kingi",
-    "Krzysztofa",
-    "Łukasza",
-    "Magdaleny",
-    "Małgorzaty",
-    "Marcina",
-    "Marka",
-    "Marii",
-    "Mariusza",
-    "Mateusza",
-    "Michała",
-    "Moniki",
-    "Natalii",
-    "Pawła",
-    "Piotra",
-    "Rafała",
-    "Roberta",
-    "Stanisława",
-    "Tomasza",
-    "Wojciecha",
-    "Zbigniewa",
-)
 
 
 class RegexDetector:
@@ -149,16 +46,20 @@ class RegexDetector:
                 and rule.entity_type not in self.allowed_entity_types
             ):
                 continue
-            for match in rule.pattern.finditer(text):
-                raw_text = match.group(0)
+            pattern = rule.pattern
+            group: str | int = "entity" if "entity" in pattern.groupindex else 0
+            for match in pattern.finditer(text):
+                raw_text = match.group(group)
                 normalized_text = rule.normalizer(raw_text)
                 if not normalized_text or not rule.validator(raw_text):
                     continue
                 if rule.entity_type == "CARD" and self._is_embedded_card_candidate(
-                    text, start=match.start(), end=match.end()
+                    text, start=match.start(group), end=match.end(group)
                 ):
                     continue
-                key = (rule.entity_type, match.start(), match.end())
+                start_offset = match.start(group)
+                end_offset = match.end(group)
+                key = (rule.entity_type, start_offset, end_offset)
                 if key in seen_keys:
                     continue
                 seen_keys.add(key)
@@ -167,16 +68,16 @@ class RegexDetector:
                         entity_id=build_entity_id(
                             entity_type=rule.entity_type,
                             normalized_text=normalized_text,
-                            start_offset=match.start(),
-                            end_offset=match.end(),
+                            start_offset=start_offset,
+                            end_offset=end_offset,
                         ),
                         entity_type=rule.entity_type,
                         raw_text=raw_text,
                         normalized_text=normalized_text,
                         confidence=rule.confidence,
                         source_detector=self.name,
-                        start_offset=match.start(),
-                        end_offset=match.end(),
+                        start_offset=start_offset,
+                        end_offset=end_offset,
                         metadata={
                             "validation": "checksum_or_pattern",
                             "context_required": str(rule.context_required).lower(),
@@ -192,31 +93,78 @@ class RegexDetector:
         return (bool(left) and left[-1].isdigit()) or (bool(right) and right[0].isdigit())
 
     def _heuristic_rules(self) -> list[RegexRule]:
-        enabled = (
-            None
-            if self.allowed_entity_types is None
-            else set(self.allowed_entity_types)
-        )
+        enabled = None if self.allowed_entity_types is None else set(self.allowed_entity_types)
         rules: list[RegexRule] = []
-        person_token = r"(?-i:[A-ZŁŚŻŹĆŃÓ][a-ząćęłńóśźż]+(?:-[A-ZŁŚŻŹĆŃÓ][a-ząćęłńóśźż]+)?)"
-        person_full_name = rf"{person_token}\s+{person_token}"
+        person_token = (
+            r"(?-i:[A-ZŁŚŻŹĆŃÓ][a-ząćęłńóśźż]+"
+            r"(?:-[A-ZŁŚŻŹĆŃÓ][a-ząćęłńóśźż]+)?)"
+        )
+        initial_token = r"(?-i:[A-ZŁŚŻŹĆŃÓ]\.)"
         if enabled is None or "PERSON" in enabled:
-            first_names_alt = "|".join(POLISH_FIRST_NAME_FORMS)
+            first_names_alt = "|".join(
+                re.escape(name) for name in sorted(POLISH_FIRST_NAME_FORMS, key=len, reverse=True)
+            )
+            given_name = rf"(?-i:(?:{first_names_alt}))"
+            given_or_initial = rf"(?:{given_name}|{initial_token})"
+            given_first_name = rf"{given_name}(?:\s+{given_or_initial}){{0,2}}\s+{person_token}"
+            surname_first_name = (
+                rf"{person_token}\s+{given_or_initial}(?:\s+{given_or_initial}){{0,2}}"
+            )
+            initial_surname = rf"{initial_token}\s+{person_token}"
+            full_person_reference = (
+                rf"(?:{given_first_name}|{surname_first_name}|{initial_surname})"
+            )
+            person_reference = rf"(?:{full_person_reference}|{person_token})"
+            honorific = (
+                r"(?:(?:pan|pani|pana|panią|panem|dr\.?|mgr\.?|mec\.?|adw\.?|"
+                r"radca\s+prawny)\s+)?"
+            )
+            person_context_prefix = (
+                r"(?:imi[eę](?:\s+i\s+nazwisko)?|nazwisko\s+i\s+imi[eę]|nazwisko|"
+                r"klient(?:ka)?|pacjent(?:ka)?|pracownik|pracownica|wnioskodawca|"
+                r"wnioskodawczyni|ubezpieczon[ya]|pełnomocnik(?:a)?|reprezentant(?:ka)?|"
+                r"reprezentowan[ay]\s+przez|osoba\s+kontaktowa|kontakt(?:\s+do)?|"
+                r"opiekun(?:ka)?|adresat(?:ka)?|nadawca|odbiorca|podpisane\s+przez|"
+                r"podpisał[ao]?|przekazane\s+przez|odebrane\s+przez|wystawione\s+przez|"
+                r"sporządzone\s+przez|prowadząc[ay])"
+            )
             rules.extend(
                 [
                     RegexRule(
                         entity_type="PERSON",
-                        pattern_text=rf"\b(?:{first_names_alt})\s+{person_token}\b",
+                        pattern_text=(
+                            rf"\b{person_context_prefix}\b\s*[:,-]?\s*"
+                            rf"{honorific}(?P<entity>{person_reference})\b"
+                        ),
                         normalizer_name="identity",
                         validator_name="person_full_name",
-                        confidence=0.85,
+                        confidence=0.93,
+                        context_required=True,
+                    ),
+                    RegexRule(
+                        entity_type="PERSON",
+                        pattern_text=(
+                            rf"\b(?:z\s+)?(?:panem|panią|pan|pani|pana)\s+"
+                            rf"(?P<entity>{person_reference})\b"
+                        ),
+                        normalizer_name="identity",
+                        validator_name="person_full_name",
+                        confidence=0.9,
+                        context_required=True,
+                    ),
+                    RegexRule(
+                        entity_type="PERSON",
+                        pattern_text=rf"\b{given_first_name}\b",
+                        normalizer_name="identity",
+                        validator_name="person_full_name",
+                        confidence=0.88,
                         context_required=False,
                     ),
                     RegexRule(
                         entity_type="PERSON",
                         pattern_text=(
-                            rf"\b{person_full_name}\b"
-                            r"(?=,\s+dalej\s+jako\s+strona\s+operacyjna\b)"
+                            rf"\b(?P<entity>{full_person_reference})\b"
+                            r"(?=,\s+dalej\s+jako\s+(?!sekcja\b)[^,.]{3,80})"
                         ),
                         normalizer_name="identity",
                         validator_name="person_full_name",
@@ -225,16 +173,8 @@ class RegexDetector:
                     ),
                     RegexRule(
                         entity_type="PERSON",
-                        pattern_text=rf"(?<=przekazane przez ){person_full_name}\b",
-                        normalizer_name="identity",
-                        validator_name="person_full_name",
-                        confidence=0.9,
-                        context_required=True,
-                    ),
-                    RegexRule(
-                        entity_type="PERSON",
                         pattern_text=(
-                            rf"(?m)^{person_full_name}$"
+                            rf"(?m)^(?P<entity>{full_person_reference})$"
                             r"(?=\n"
                             r"(?-i:[A-ZŁŚŻŹĆŃÓ][a-ząćęłńóśźż]+(?:-[A-ZŁŚŻŹĆŃÓ][a-ząćęłńóśźż]+)?)"
                             r"\n(?:ul\.|al\.|pl\.|os\.|ulica|aleja)\s)"
@@ -246,10 +186,10 @@ class RegexDetector:
                     ),
                     RegexRule(
                         entity_type="PERSON",
-                        pattern_text=rf"\b{person_full_name}\b",
+                        pattern_text=rf"\b{initial_surname}\b",
                         normalizer_name="identity",
                         validator_name="person_full_name",
-                        confidence=0.86,
+                        confidence=0.87,
                         context_required=False,
                     ),
                 ]

@@ -10,6 +10,401 @@ Normalizer = Callable[[str], str]
 Validator = Callable[[str], bool]
 
 
+POLISH_FIRST_NAME_FORMS: frozenset[str] = frozenset(
+    {
+        "Adam",
+        "Adama",
+        "Adamem",
+        "Adrian",
+        "Adriana",
+        "Agnieszka",
+        "Agnieszki",
+        "Agnieszkę",
+        "Alicja",
+        "Alicji",
+        "Alicję",
+        "Aleksander",
+        "Aleksandra",
+        "Aleksandry",
+        "Amelia",
+        "Amelii",
+        "Aneta",
+        "Anety",
+        "Anna",
+        "Annę",
+        "Anny",
+        "Annie",
+        "Antoni",
+        "Antoniego",
+        "Artur",
+        "Artura",
+        "Barbara",
+        "Barbary",
+        "Barbarę",
+        "Bartosz",
+        "Bartosza",
+        "Beata",
+        "Beaty",
+        "Beatę",
+        "Błażej",
+        "Błażeja",
+        "Bogdan",
+        "Bogdana",
+        "Bożena",
+        "Bożeny",
+        "Bożenę",
+        "Cezary",
+        "Cezarego",
+        "Czesław",
+        "Czesława",
+        "Damian",
+        "Damiana",
+        "Daniel",
+        "Daniela",
+        "Dariusz",
+        "Dariusza",
+        "Dawid",
+        "Dawida",
+        "Dominik",
+        "Dominika",
+        "Dorota",
+        "Doroty",
+        "Dorotę",
+        "Edward",
+        "Edwarda",
+        "Elżbieta",
+        "Elżbiety",
+        "Elżbietę",
+        "Ewa",
+        "Ewy",
+        "Ewę",
+        "Filip",
+        "Filipa",
+        "Grażyna",
+        "Grażyny",
+        "Grażynę",
+        "Grzegorz",
+        "Grzegorza",
+        "Hanna",
+        "Hanny",
+        "Hannę",
+        "Henryk",
+        "Henryka",
+        "Hubert",
+        "Huberta",
+        "Igor",
+        "Igora",
+        "Iwona",
+        "Iwony",
+        "Iwonę",
+        "Izabela",
+        "Izabeli",
+        "Izabelę",
+        "Jakub",
+        "Jakuba",
+        "Jakubem",
+        "Jan",
+        "Jana",
+        "Janem",
+        "Jarosław",
+        "Jarosława",
+        "Jerzy",
+        "Jerzego",
+        "Joanna",
+        "Joanny",
+        "Joannę",
+        "Jolanta",
+        "Jolanty",
+        "Jolantę",
+        "Julia",
+        "Julii",
+        "Julię",
+        "Justyna",
+        "Justyny",
+        "Justynę",
+        "Kacper",
+        "Kacpra",
+        "Kamil",
+        "Kamila",
+        "Karolina",
+        "Karoliny",
+        "Karolinę",
+        "Katarzyna",
+        "Katarzyny",
+        "Katarzynę",
+        "Kinga",
+        "Kingi",
+        "Kingę",
+        "Klaudia",
+        "Klaudii",
+        "Klaudię",
+        "Konrad",
+        "Konrada",
+        "Krystyna",
+        "Krystyny",
+        "Krystynę",
+        "Krzysztof",
+        "Krzysztofa",
+        "Krzysztofem",
+        "Łukasz",
+        "Łukasza",
+        "Łukaszem",
+        "Maciej",
+        "Macieja",
+        "Magdalena",
+        "Magdaleny",
+        "Magdalenę",
+        "Małgorzata",
+        "Małgorzaty",
+        "Małgorzatę",
+        "Marcin",
+        "Marcina",
+        "Marcinem",
+        "Marek",
+        "Marka",
+        "Markiem",
+        "Maria",
+        "Marii",
+        "Mariusz",
+        "Mariusza",
+        "Marta",
+        "Marty",
+        "Martę",
+        "Martyna",
+        "Martyny",
+        "Martynę",
+        "Mateusz",
+        "Mateusza",
+        "Mateuszem",
+        "Michał",
+        "Michała",
+        "Michałem",
+        "Mikołaj",
+        "Mikołaja",
+        "Mirosław",
+        "Mirosława",
+        "Monika",
+        "Moniki",
+        "Monikę",
+        "Natalia",
+        "Natalii",
+        "Natalię",
+        "Patryk",
+        "Patrycja",
+        "Patrycji",
+        "Patrycję",
+        "Patryka",
+        "Paulina",
+        "Pauliny",
+        "Paulinę",
+        "Paweł",
+        "Pawła",
+        "Pawłem",
+        "Piotr",
+        "Piotra",
+        "Piotrem",
+        "Przemysław",
+        "Przemysława",
+        "Radosław",
+        "Radosława",
+        "Rafał",
+        "Rafała",
+        "Robert",
+        "Roberta",
+        "Sebastian",
+        "Sebastiana",
+        "Sławomir",
+        "Sławomira",
+        "Stanisław",
+        "Stanisława",
+        "Sylwia",
+        "Sylwii",
+        "Sylwię",
+        "Tadeusz",
+        "Tadeusza",
+        "Teresa",
+        "Teresy",
+        "Teresę",
+        "Tomasz",
+        "Tomasza",
+        "Tomaszem",
+        "Urszula",
+        "Urszuli",
+        "Urszulę",
+        "Weronika",
+        "Weroniki",
+        "Weronikę",
+        "Wiktor",
+        "Wiktora",
+        "Wojciech",
+        "Wojciecha",
+        "Zbigniew",
+        "Zbigniewa",
+        "Zofia",
+        "Zofię",
+        "Zofii",
+    }
+)
+
+COMMON_POLISH_SURNAMES: frozenset[str] = frozenset(
+    {
+        "Adamski",
+        "Andrzejewski",
+        "Baran",
+        "Bąk",
+        "Borkowski",
+        "Chmielewski",
+        "Cieślak",
+        "Czarnecki",
+        "Dąbrowski",
+        "Głowacki",
+        "Górski",
+        "Grabowski",
+        "Jabłoński",
+        "Jankowski",
+        "Jasiński",
+        "Jaworski",
+        "Kaczmarek",
+        "Kalinowski",
+        "Kamiński",
+        "Kaźmierczak",
+        "Kołodziej",
+        "Kowalczyk",
+        "Kowalski",
+        "Kozłowski",
+        "Król",
+        "Kubiak",
+        "Kucharski",
+        "Kwiatkowski",
+        "Lewandowski",
+        "Lis",
+        "Maciejewski",
+        "Majewski",
+        "Malinowski",
+        "Marciniak",
+        "Mazur",
+        "Michalak",
+        "Michalski",
+        "Nowak",
+        "Nowakowski",
+        "Olszewski",
+        "Ostrowski",
+        "Pawłowski",
+        "Pietrzak",
+        "Piotrowski",
+        "Rutkowski",
+        "Sadowski",
+        "Sawicki",
+        "Sikora",
+        "Sikorski",
+        "Sobczak",
+        "Sokołowski",
+        "Stępień",
+        "Szczepański",
+        "Szewczyk",
+        "Szymański",
+        "Tomaszewski",
+        "Urbański",
+        "Walczak",
+        "Wasilewski",
+        "Wieczorek",
+        "Wilk",
+        "Wiśniewski",
+        "Włodarczyk",
+        "Wojciechowski",
+        "Woźniak",
+        "Wróbel",
+        "Wróblewski",
+        "Wójcik",
+        "Wysocki",
+        "Zając",
+        "Zakrzewski",
+        "Zalewski",
+        "Zawadzki",
+        "Zieliński",
+    }
+)
+
+PERSON_BLOCKED_TOKENS: frozenset[str] = frozenset(
+    {
+        "Adres",
+        "Bankowy",
+        "Charakter",
+        "Dane",
+        "Data",
+        "Dodatkowe",
+        "Dokument",
+        "Dział",
+        "Faktura",
+        "Klient",
+        "Klientka",
+        "Kontakt",
+        "Liczba",
+        "Miejsce",
+        "Numer",
+        "Pan",
+        "Pana",
+        "Panem",
+        "Pani",
+        "Panią",
+        "Pełnomocnik",
+        "Pracownik",
+        "Rachunek",
+        "Sekcja",
+        "Sprawa",
+        "Strona",
+        "Sąd",
+        "Telefon",
+        "Testowe",
+        "Umowa",
+        "Wszystkie",
+        "Zamówienie",
+    }
+)
+
+SURNAME_SUFFIXES: tuple[str, ...] = (
+    "acka",
+    "acki",
+    "ackich",
+    "ackiego",
+    "ackiemu",
+    "ackim",
+    "ak",
+    "czak",
+    "czuk",
+    "czyk",
+    "dzka",
+    "dzki",
+    "dzkich",
+    "dzkiego",
+    "dzkiemu",
+    "dzkim",
+    "ewicz",
+    "ek",
+    "icka",
+    "icki",
+    "ickich",
+    "ickiego",
+    "ickiemu",
+    "ickim",
+    "ik",
+    "ska",
+    "skich",
+    "skiego",
+    "ski",
+    "skiemu",
+    "skim",
+    "uk",
+    "wicz",
+    "yska",
+    "yski",
+    "yskich",
+    "yskiego",
+    "yskiemu",
+    "yskim",
+)
+
+
 def normalize_digits(value: str) -> str:
     return re.sub(r"\D", "", value)
 
@@ -49,7 +444,11 @@ def validate_email(value: str) -> bool:
 
 def validate_phone(value: str) -> bool:
     digits = normalize_digits(value)
-    return len(digits) in {9, 11} and (len(digits) == 9 or digits.startswith("48"))
+    return (
+        len(digits) == 9
+        or (len(digits) == 11 and digits.startswith("48"))
+        or (len(digits) == 13 and digits.startswith("0048"))
+    )
 
 
 def validate_pesel(value: str) -> bool:
@@ -231,34 +630,79 @@ def validate_address(value: str) -> bool:
     has_street = any(marker in candidate.lower() for marker in street_markers)
     has_number = bool(re.search(r"\b\d+[A-Z]?(?:/\d+[A-Z]?)?\b", candidate, re.IGNORECASE))
     has_postal = bool(re.search(r"\b\d{2}-\d{3}\b", candidate))
-    return (has_street and has_number) or (has_postal and has_number)
+    has_city_after_postal = bool(
+        re.search(r"\b\d{2}-\d{3}\s+[A-ZĄĆĘŁŃÓŚŹŻ][A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż -]+", candidate)
+    )
+    return (has_street and has_number) or has_city_after_postal or (has_postal and has_number)
 
 
 def validate_person_full_name(value: str) -> bool:
-    candidate = " ".join(value.strip().split())
+    candidate = _strip_person_context(" ".join(value.strip().split()))
     if not candidate:
         return False
-    if not re.fullmatch(
-        r"[A-ZŁŚŻŹĆŃÓ][a-ząćęłńóśźż]+(?:-[A-ZŁŚŻŹĆŃÓ][a-ząćęłńóśźż]+)?"
-        r"\s+"
-        r"[A-ZŁŚŻŹĆŃÓ][a-ząćęłńóśźż]+(?:-[A-ZŁŚŻŹĆŃÓ][a-ząćęłńóśźż]+)?",
-        candidate,
-    ):
+    if len(candidate) > 96:
         return False
 
-    blocked_tokens = {
-        "Charakter",
-        "Data",
-        "Dane",
-        "Dodatkowe",
-        "Liczba",
-        "Miejsce",
-        "Strona",
-        "Testowe",
-        "Umowa",
-        "Wszystkie",
-    }
-    return not any(token in blocked_tokens for token in candidate.split())
+    tokens = candidate.replace("-", " - ").split()
+    words = [token for token in tokens if token != "-"]
+    if not words:
+        return False
+    if any(_is_blocked_person_token(token) for token in words):
+        return False
+    if not all(_is_person_word(token) or _is_initial(token) for token in words):
+        return False
+
+    plain_words = [token for token in words if not _is_initial(token)]
+    if len(plain_words) == 1:
+        return _is_first_name_form(plain_words[0]) or _looks_like_polish_surname(plain_words[0])
+    if len(plain_words) > 4:
+        return False
+    return any(_is_first_name_form(token) for token in plain_words) or any(
+        _looks_like_polish_surname(token) for token in plain_words
+    )
+
+
+def _strip_person_context(value: str) -> str:
+    return re.sub(
+        r"^(?:pan|pani|pana|panią|panem|z\s+panem|z\s+panią|dr\.?|mgr\.?|mec\.?|"
+        r"adw\.?|radca\s+prawny)\s+",
+        "",
+        value,
+        flags=re.IGNORECASE,
+    )
+
+
+def _is_person_word(value: str) -> bool:
+    return bool(
+        re.fullmatch(
+            r"[A-ZŁŚŻŹĆŃÓ][a-ząćęłńóśźż]+(?:-[A-ZŁŚŻŹĆŃÓ][a-ząćęłńóśźż]+)?",
+            value,
+        )
+    )
+
+
+def _is_initial(value: str) -> bool:
+    return bool(re.fullmatch(r"[A-ZŁŚŻŹĆŃÓ]\.", value))
+
+
+def _is_blocked_person_token(value: str) -> bool:
+    return value in PERSON_BLOCKED_TOKENS
+
+
+def _is_first_name_form(value: str) -> bool:
+    return value in POLISH_FIRST_NAME_FORMS
+
+
+def _looks_like_polish_surname(value: str) -> bool:
+    normalized = value.rstrip(".")
+    if normalized in COMMON_POLISH_SURNAMES:
+        return True
+    lowered = normalized.casefold()
+    if any(lowered.endswith(suffix) for suffix in SURNAME_SUFFIXES):
+        return True
+    if "-" in normalized:
+        return all(_looks_like_polish_surname(part) for part in normalized.split("-"))
+    return False
 
 
 NORMALIZERS: dict[str, Normalizer] = {

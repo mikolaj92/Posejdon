@@ -18,8 +18,10 @@ class LLMMessage(BaseModel):
     role: str
     content: str
 
+
 class LLMRequestMetadata(BaseModel):
     subsystem: str
+
 
 class LLMRequest(BaseModel):
     messages: list[LLMMessage]
@@ -28,8 +30,10 @@ class LLMRequest(BaseModel):
     timeout_seconds: float = 60.0
     metadata: LLMRequestMetadata
 
+
 class LLMResponse(BaseModel):
     content: str
+
 
 class MLXInternalProvider:
     def __init__(self, model_path: str) -> None:
@@ -64,12 +68,14 @@ class MLXInternalProvider:
             raise RuntimeError(f"MLX generation failed: {exc.stderr}") from exc
         return LLMResponse(content=result.stdout)
 
+
 class LLMGateway:
     def __init__(self, provider: MLXInternalProvider) -> None:
         self.provider = provider
 
     def complete(self, request: LLMRequest) -> LLMResponse:
         return self.provider.complete(request)
+
 
 _PROMPT_REGISTRY = PosejdonPromptRegistry()
 
