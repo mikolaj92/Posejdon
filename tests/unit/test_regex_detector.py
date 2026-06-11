@@ -193,6 +193,38 @@ def test_regex_detector_redacts_labeled_checksum_invalid_bank_account(tmp_path) 
     assert "41 1140 2004 0000 3102 1234 5678" in accounts
 
 
+def test_regex_detector_redacts_pdf_broken_bank_account_label(tmp_path) -> None:
+    db_path = tmp_path / "regex_catalog.sqlite3"
+    detector = RegexDetector(
+        allowed_entity_types={"BANK_ACCOUNT"},
+        catalog_path=str(db_path),
+    )
+
+    entities = detector.detect("Dane obejmują rachu\n41 1140 2004 0000 3102 1234 5678.")
+
+    accounts = [entity.raw_text for entity in entities if entity.entity_type == "BANK_ACCOUNT"]
+    assert "41 1140 2004 0000 3102 1234 5678" in accounts
+
+
+def test_regex_detector_finds_polish_city_and_street_contexts(tmp_path) -> None:
+    db_path = tmp_path / "regex_catalog.sqlite3"
+    detector = RegexDetector(
+        allowed_entity_types={"CITY", "STREET"},
+        catalog_path=str(db_path),
+    )
+
+    entities = detector.detect(
+        "Materiały obejmują korespondencję z Łódźa i dokumenty dla lokalu przy Piotrkowskiej. "
+        "Dodatkowe ustalenia dotyczyły przekazania kluczy w Wrocławu przy ul. Długa 41/2."
+    )
+
+    by_type = {}
+    for entity in entities:
+        by_type.setdefault(entity.entity_type, set()).add(entity.raw_text)
+    assert {"Łódźa", "Wrocławu"}.issubset(by_type["CITY"])
+    assert {"Piotrkowskiej", "Długa"}.issubset(by_type["STREET"])
+
+
 def test_regex_detector_finds_technical_identifiers_from_contract_context(tmp_path) -> None:
     db_path = tmp_path / "regex_catalog.sqlite3"
     detector = RegexDetector(

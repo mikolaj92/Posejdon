@@ -99,6 +99,14 @@ def test_regex_detector_finds_postal_code_city_address_without_street() -> None:
             {"BANK_ACCOUNT"},
         ),
         (
+            (
+                "Dane obejmują rachu\n41 1140 2004 0000 3102 1234 5678 oraz "
+                "korespondencję z Łódźa i przekazania kluczy w Wrocławu przy Piotrkowskiej."
+            ),
+            ["41 1140 2004 0000 3102 1234 5678", "Łódźa", "Wrocławu", "Piotrkowskiej"],
+            {"BANK_ACCOUNT", "CITY", "STREET"},
+        ),
+        (
             "KRS 0000123456, REGON 192598184, VAT UE PL8567346215.",
             ["0000123456", "192598184", "PL8567346215"],
             {"KRS", "REGON", "VAT_ID"},

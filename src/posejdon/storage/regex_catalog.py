@@ -161,6 +161,17 @@ DEFAULT_REGEX_RULES: tuple[tuple[str, str, str, str, float, int, int, str], ...]
         "Labeled bank account number",
     ),
     (
+        "BANK_ACCOUNT",
+        r"\b(?:rachu(?:nek|nku)?|konto|nr\s+konta|numer\s+rachunku)"
+        r"\b[\s:;,.#/-]{0,16}(?P<entity>(?:PL[\s-]*)?(?:\d[\s-]*){25}\d)\b",
+        "upper_alnum",
+        "labeled_bank_account",
+        0.985,
+        1,
+        19,
+        "PDF-broken labeled bank account number",
+    ),
+    (
         "VAT_ID",
         r"\b(?:VAT(?:\s*ID|\s*UE)?|UE\s*VAT|EU\s*VAT)[:\s#/-]*(?:[A-Z]{2}\s*)?[A-Z0-9-]{8,16}\b",
         "upper_alnum",
@@ -408,6 +419,49 @@ DEFAULT_REGEX_RULES: tuple[tuple[str, str, str, str, float, int, int, str], ...]
         1,
         20,
         "Postal code plus city address",
+    ),
+    (
+        "CITY",
+        (
+            r"\b(?:korespondencj[ęe]\s+z|przekazania\s+kluczy\s+w|kluczy\s+w|"
+            r"miejscowość|miasto|lokal\s+w|lokalu\s+w)\s+"
+            r"(?P<entity>[A-ZĄĆĘŁŃÓŚŹŻ][A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż.-]{2,40})\b"
+        ),
+        "identity",
+        "always_true",
+        0.9,
+        1,
+        25,
+        "Polish city with sensitive context",
+    ),
+    (
+        "STREET",
+        (
+            r"\b(?:ul\.|ulica|al\.|aleja|pl\.|os\.)\s+"
+            r"(?P<entity>[A-ZĄĆĘŁŃÓŚŹŻ][A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż0-9 .-]{2,60})"
+            r"(?=\s+\d|\s*,|\.|\n|$)"
+        ),
+        "identity",
+        "always_true",
+        0.88,
+        1,
+        30,
+        "Polish street name with marker",
+    ),
+    (
+        "STREET",
+        (
+            r"\b(?:lokalu\s+przy|adres\s+przy|kluczy\s+w\s+"
+            r"[A-ZĄĆĘŁŃÓŚŹŻ][A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż.-]{2,40}\s+przy|przy)\s+"
+            r"(?P<entity>[A-ZĄĆĘŁŃÓŚŹŻ][A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż.-]{2,40})"
+            r"(?=\s+\d|\s*,|\.|\n|$)"
+        ),
+        "identity",
+        "always_true",
+        0.87,
+        1,
+        31,
+        "Polish street name from location context",
     ),
 )
 
