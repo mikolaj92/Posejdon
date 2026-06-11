@@ -28,6 +28,7 @@ def _raw_entities(text: str, entity_type: str) -> set[str]:
         ("Prowadząca Małgorzata Zielińska zamknęła sprawę.", "Małgorzata Zielińska"),
         ("Rozmowa z Panem Tomaszem Szymańskim została odnotowana.", "Tomaszem Szymańskim"),
         ("Wnioskodawca Adam Nowakowski uzupełnił formularz.", "Adam Nowakowski"),
+        ("Materiały przekazane przez Roman Mazur obejmują korespondencję.", "Roman Mazur"),
     ],
 )
 def test_regex_detector_finds_polish_person_variants(text: str, expected: str) -> None:

@@ -175,9 +175,39 @@ def test_regex_detector_rejects_invalid_bank_account_candidates(tmp_path) -> Non
         catalog_path=str(db_path),
     )
 
-    entities = detector.detect("Numer rachunku 12 3456 7890 1234 5678 9012 3456.")
+    entities = detector.detect("Kandydat 12 3456 7890 1234 5678 9012 3456.")
 
     assert entities == []
+
+
+def test_regex_detector_redacts_labeled_checksum_invalid_bank_account(tmp_path) -> None:
+    db_path = tmp_path / "regex_catalog.sqlite3"
+    detector = RegexDetector(
+        allowed_entity_types={"BANK_ACCOUNT"},
+        catalog_path=str(db_path),
+    )
+
+    entities = detector.detect("Rachunek 41 1140 2004 0000 3102 1234 5678.")
+
+    accounts = [entity.raw_text for entity in entities if entity.entity_type == "BANK_ACCOUNT"]
+    assert "41 1140 2004 0000 3102 1234 5678" in accounts
+
+
+def test_regex_detector_finds_technical_identifiers_from_contract_context(tmp_path) -> None:
+    db_path = tmp_path / "regex_catalog.sqlite3"
+    detector = RegexDetector(
+        allowed_entity_types={"IP_ADDRESS", "VEHICLE_REGISTRATION", "DEVICE_ID"},
+        catalog_path=str(db_path),
+    )
+
+    entities = detector.detect(
+        "Pojazd KR 7MZ18 i identyfikator host-waw-01. Dostęp z 83.21.144.9."
+    )
+
+    by_type = {entity.entity_type: entity.raw_text for entity in entities}
+    assert by_type["VEHICLE_REGISTRATION"] == "KR 7MZ18"
+    assert by_type["DEVICE_ID"] == "host-waw-01"
+    assert by_type["IP_ADDRESS"] == "83.21.144.9"
 
 
 def test_regex_detector_does_not_treat_card_fragment_inside_longer_number_as_card(tmp_path) -> None:

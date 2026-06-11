@@ -58,6 +58,15 @@ class MaskingStrategy:
 
 
 @dataclass(slots=True)
+class FixedMaskStrategy:
+    kind: ReplacementKind = ReplacementKind.MASK
+    mask_text: str = "****"
+
+    def replace(self, entity: SensitiveEntity, ordinal: int) -> str:
+        return self.mask_text
+
+
+@dataclass(slots=True)
 class FormatPreservingStrategy:
     kind: ReplacementKind = ReplacementKind.FORMAT_PRESERVING
 

@@ -211,6 +211,9 @@ POLISH_FIRST_NAME_FORMS: frozenset[str] = frozenset(
         "Rafała",
         "Robert",
         "Roberta",
+        "Roman",
+        "Romana",
+        "Romanem",
         "Sebastian",
         "Sebastiana",
         "Sławomir",
@@ -531,6 +534,34 @@ def validate_bank_account(value: str) -> bool:
     return validate_iban(value)
 
 
+def validate_labeled_bank_account(value: str) -> bool:
+    digits = normalize_digits(value)
+    if len(digits) != 26:
+        return False
+    return len(set(digits)) > 1
+
+
+def validate_ip_address(value: str) -> bool:
+    parts = value.split(".")
+    return len(parts) == 4 and all(part.isdigit() and 0 <= int(part) <= 255 for part in parts)
+
+
+def validate_vehicle_registration(value: str) -> bool:
+    compact = normalize_upper_alnum(value)
+    return bool(re.fullmatch(r"[A-Z]{1,3}[A-Z0-9]{4,6}", compact)) and any(
+        char.isdigit() for char in compact
+    )
+
+
+def validate_device_identifier(value: str) -> bool:
+    candidate = value.strip()
+    return (
+        3 <= len(candidate) <= 64
+        and bool(re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", candidate))
+        and any(char.isalpha() for char in candidate)
+    )
+
+
 def validate_card_number(value: str) -> bool:
     digits = normalize_digits(value)
     if len(digits) < 13 or len(digits) > 19:
@@ -725,7 +756,11 @@ VALIDATORS: dict[str, Validator] = {
     "krs": validate_krs,
     "iban": validate_iban,
     "bank_account": validate_bank_account,
+    "labeled_bank_account": validate_labeled_bank_account,
     "card_number": validate_card_number,
+    "ip_address": validate_ip_address,
+    "vehicle_registration": validate_vehicle_registration,
+    "device_identifier": validate_device_identifier,
     "postal_code": validate_postal_code,
     "date_of_birth": validate_date_of_birth,
     "document_number": validate_document_number,

@@ -76,6 +76,11 @@ ENTITY_GROUPS: dict[str, tuple[str, ...]] = {
         "CLIENT_ID",
         "EMPLOYEE_ID",
     ),
+    "technical_identifiers": (
+        "IP_ADDRESS",
+        "VEHICLE_REGISTRATION",
+        "DEVICE_ID",
+    ),
 }
 
 
@@ -106,6 +111,7 @@ DEFAULT_POLICY_PROFILES: dict[PolicyProfileName, PolicyProfileDefinition] = {
             "document_identity",
             "case_and_contract_refs",
             "workforce_refs",
+            "technical_identifiers",
         ),
         replacement_style=ReplacementKind.CATEGORY_PLACEHOLDER,
         output_naming=OutputNamingRules(suffix="_anonymized"),

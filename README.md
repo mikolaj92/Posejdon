@@ -4,7 +4,6 @@ Text anonymization package.
 
 Scope:
 
-- Presidio pipeline
 - Polish regex recognizers
 - checksum validators for identifiers
 - optional GLiNER recognizer

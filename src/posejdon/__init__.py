@@ -1,4 +1,4 @@
-from posejdon.anonymizer import AnonymizationResult, TextAnonymizer
+from posejdon.anonymizer import AnonymizationResult, SegmentAnonymizationResult, TextAnonymizer
 from posejdon.core.enums import (
     DocumentKind,
     ProcessingMode,
@@ -26,6 +26,7 @@ from posejdon.domain.reports import (
 
 __all__ = [
     "AnonymizationResult",
+    "SegmentAnonymizationResult",
     "TextAnonymizer",
     "DocumentKind",
     "MappingVaultRecord",

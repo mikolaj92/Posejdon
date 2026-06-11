@@ -43,10 +43,8 @@ class PosejdonSettings(BaseSettings):
     mlx_model_path: str | None = None
     enable_presidio: bool = True
     enable_gliner: bool = True
-    enable_spacy: bool = True
     require_presidio: bool = False
     require_gliner: bool = False
-    require_spacy: bool = False
     vault_hmac_key: str | None = None
     vault_retention_days: int | None = None
     regex_catalog_path: str = "storage/regex_catalog.sqlite3"

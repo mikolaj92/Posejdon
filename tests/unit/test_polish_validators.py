@@ -4,9 +4,13 @@ from __future__ import annotations
 
 from posejdon.detectors.regex_support import (
     validate_bank_account,
+    validate_device_identifier,
+    validate_ip_address,
+    validate_labeled_bank_account,
     validate_nip,
     validate_pesel,
     validate_regon,
+    validate_vehicle_registration,
 )
 
 
@@ -76,3 +80,20 @@ class TestValidateBankAccount:
 
     def test_invalid_length(self) -> None:
         assert validate_bank_account("123456") is False
+
+    def test_labeled_bank_account_accepts_checksum_invalid_synthetic_number(self) -> None:
+        assert validate_labeled_bank_account("41 1140 2004 0000 3102 1234 5678") is True
+
+
+class TestValidateTechnicalIdentifiers:
+    def test_ip_address(self) -> None:
+        assert validate_ip_address("83.21.144.9") is True
+        assert validate_ip_address("999.21.144.9") is False
+
+    def test_vehicle_registration(self) -> None:
+        assert validate_vehicle_registration("KR 7MZ18") is True
+        assert validate_vehicle_registration("ABCDEF") is False
+
+    def test_device_identifier(self) -> None:
+        assert validate_device_identifier("host-waw-01") is True
+        assert validate_device_identifier("iPhone-Anna") is True

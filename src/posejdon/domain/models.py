@@ -32,8 +32,6 @@ class DetectorSummary(BaseModel):
     presidio_status: str = "disabled"
     gliner_enabled: bool = False
     gliner_status: str = "disabled"
-    spacy_enabled: bool = False
-    spacy_status: str = "disabled"
     llm_review_enabled: bool = True
     llm_provider: str | None = None
     llm_profile: str | None = None

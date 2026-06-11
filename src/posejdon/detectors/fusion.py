@@ -30,7 +30,7 @@ def spans_overlap(left: SensitiveEntity, right: SensitiveEntity) -> bool:
 
 @dataclass(slots=True)
 class DetectorFusion:
-    prefer_detectors: tuple[str, ...] = ("regex", "presidio", "gliner", "spacy")
+    prefer_detectors: tuple[str, ...] = ("regex", "presidio", "gliner")
 
     def merge(self, candidates: list[SensitiveEntity]) -> list[SensitiveEntity]:
         normalized = [self._canonicalize(entity) for entity in candidates]
