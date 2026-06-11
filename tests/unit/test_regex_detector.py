@@ -71,6 +71,16 @@ def test_regex_detector_finds_phone_numbers_with_spaces_and_hyphens() -> None:
     assert "500 600-701" in phones
 
 
+def test_regex_detector_finds_pdf_truncated_labeled_phone_number() -> None:
+    entities = RegexDetector(allowed_entity_types={"PHONE"}).detect(
+        "Dane obejmują numer telefonu +48 \n222 333, rachunek 41 1140 2004."
+    )
+
+    phones = [entity.raw_text for entity in entities if entity.entity_type == "PHONE"]
+
+    assert "+48 \n222 333" in phones
+
+
 def test_regex_detector_honors_allowed_entity_filter() -> None:
     detector = RegexDetector(allowed_entity_types={"EMAIL"})
     entities = detector.detect("Email jan.kowalski@example.com oraz PESEL 44051401458.")
@@ -204,6 +214,24 @@ def test_regex_detector_redacts_pdf_broken_bank_account_label(tmp_path) -> None:
 
     accounts = [entity.raw_text for entity in entities if entity.entity_type == "BANK_ACCOUNT"]
     assert "41 1140 2004 0000 3102 1234 5678" in accounts
+
+
+def test_regex_detector_redacts_pdf_truncated_bank_account_label(tmp_path) -> None:
+    db_path = tmp_path / "regex_catalog.sqlite3"
+    detector = RegexDetector(
+        allowed_entity_types={"BANK_ACCOUNT"},
+        catalog_path=str(db_path),
+    )
+
+    entities = detector.detect(
+        "Dane obejmują numer telefonu +48 514 222 333, rachun\n"
+        "1140 2004 0000 3102 1234 5678, pojazd KR 7MZ18 oraz rachune\n"
+        "1090 2590 0000 0001 2345 6789."
+    )
+
+    accounts = [entity.raw_text for entity in entities if entity.entity_type == "BANK_ACCOUNT"]
+    assert "1140 2004 0000 3102 1234 5678" in accounts
+    assert "1090 2590 0000 0001 2345 6789" in accounts
 
 
 def test_regex_detector_finds_polish_city_and_street_contexts(tmp_path) -> None:

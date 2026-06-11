@@ -454,6 +454,15 @@ def validate_phone(value: str) -> bool:
     )
 
 
+def validate_phone_fragment(value: str) -> bool:
+    digits = normalize_digits(value)
+    if digits.startswith("0048"):
+        return 10 <= len(digits) <= 13
+    if digits.startswith("48"):
+        return 8 <= len(digits) <= 11
+    return 6 <= len(digits) <= 9
+
+
 def validate_pesel(value: str) -> bool:
     digits = normalize_digits(value)
     if len(digits) != 11 or len(set(digits)) == 1:
@@ -537,6 +546,13 @@ def validate_bank_account(value: str) -> bool:
 def validate_labeled_bank_account(value: str) -> bool:
     digits = normalize_digits(value)
     if len(digits) != 26:
+        return False
+    return len(set(digits)) > 1
+
+
+def validate_labeled_bank_account_fragment(value: str) -> bool:
+    digits = normalize_digits(value)
+    if not 20 <= len(digits) <= 26:
         return False
     return len(set(digits)) > 1
 
@@ -750,6 +766,7 @@ VALIDATORS: dict[str, Validator] = {
     "always_true": lambda value: True,
     "email": validate_email,
     "phone": validate_phone,
+    "phone_fragment": validate_phone_fragment,
     "pesel": validate_pesel,
     "nip": validate_nip,
     "regon": validate_regon,
@@ -757,6 +774,7 @@ VALIDATORS: dict[str, Validator] = {
     "iban": validate_iban,
     "bank_account": validate_bank_account,
     "labeled_bank_account": validate_labeled_bank_account,
+    "labeled_bank_account_fragment": validate_labeled_bank_account_fragment,
     "card_number": validate_card_number,
     "ip_address": validate_ip_address,
     "vehicle_registration": validate_vehicle_registration,

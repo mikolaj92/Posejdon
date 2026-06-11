@@ -96,6 +96,17 @@ DEFAULT_REGEX_RULES: tuple[tuple[str, str, str, str, float, int, int, str], ...]
         10,
         "Polish phone number",
     ),
+    (
+        "PHONE",
+        r"\b(?:tel\.?|telefon|numer\s+telefonu)\b[\s:;,.#/-]{0,16}"
+        r"(?P<entity>(?:(?:\(\+?48\)|\+?48|0048)[\s-]*)?(?:\d[\s-]*){5,8}\d)\b",
+        "digits",
+        "phone_fragment",
+        0.9,
+        1,
+        9,
+        "PDF-truncated labeled phone number",
+    ),
     ("PESEL", r"\b\d{11}\b", "digits", "pesel", 0.995, 0, 10, "PESEL"),
     ("NIP", r"\b\d{3}-?\d{3}-?\d{2}-?\d{2}\b", "digits", "nip", 0.99, 0, 10, "NIP"),
     ("REGON", r"\b\d{9}(?:\d{5})?\b", "digits", "regon", 0.98, 0, 10, "REGON"),
@@ -162,7 +173,7 @@ DEFAULT_REGEX_RULES: tuple[tuple[str, str, str, str, float, int, int, str], ...]
     ),
     (
         "BANK_ACCOUNT",
-        r"\b(?:rachu(?:nek|nku)?|konto|nr\s+konta|numer\s+rachunku)"
+        r"\b(?:rachu(?:n(?:ek|ku|e)?)?|konto|nr\s+konta|numer\s+rachunku)"
         r"\b[\s:;,.#/-]{0,16}(?P<entity>(?:PL[\s-]*)?(?:\d[\s-]*){25}\d)\b",
         "upper_alnum",
         "labeled_bank_account",
@@ -170,6 +181,17 @@ DEFAULT_REGEX_RULES: tuple[tuple[str, str, str, str, float, int, int, str], ...]
         1,
         19,
         "PDF-broken labeled bank account number",
+    ),
+    (
+        "BANK_ACCOUNT",
+        r"\b(?:rachu(?:n(?:ek|ku|e)?)?|konto|nr\s+konta|numer\s+rachunku)"
+        r"\b[\s:;,.#/-]{0,16}(?P<entity>(?:\d[\s-]*){19,25}\d)\b",
+        "upper_alnum",
+        "labeled_bank_account_fragment",
+        0.97,
+        1,
+        18,
+        "PDF-truncated labeled bank account number",
     ),
     (
         "VAT_ID",
