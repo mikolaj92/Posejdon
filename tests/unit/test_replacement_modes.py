@@ -57,6 +57,7 @@ def test_irreversible_category_placeholders_become_fixed_masks() -> None:
     assert {replacement.replacement_kind for replacement in plan.replacements} == {
         ReplacementKind.MASK
     }
+    assert [replacement.source_text for replacement in plan.replacements] == [None, None]
 
 
 def test_reversible_category_placeholders_stay_reinjectable_tokens() -> None:
@@ -75,6 +76,10 @@ def test_reversible_category_placeholders_stay_reinjectable_tokens() -> None:
     assert {replacement.replacement_kind for replacement in plan.replacements} == {
         ReplacementKind.CATEGORY_PLACEHOLDER
     }
+    assert [replacement.source_text for replacement in plan.replacements] == [
+        "Jan Kowalski",
+        "44051401359",
+    ]
 
 
 def test_explicit_mask_policy_remains_format_masked_in_irreversible_mode() -> None:
