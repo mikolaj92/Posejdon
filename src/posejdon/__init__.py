@@ -3,6 +3,7 @@ from posejdon.core.enums import (
     DocumentKind,
     ProcessingMode,
     ReinjectionConflictReason,
+    ReplacementKind,
     StorageMode,
 )
 from posejdon.domain.artifacts import (
@@ -43,6 +44,7 @@ __all__ = [
     "ReinjectionReport",
     "ReinjectionRequest",
     "ReinjectionVaultEntry",
+    "ReplacementKind",
     "RestoreArtifactSet",
     "SensitiveEntity",
     "StorageMode",

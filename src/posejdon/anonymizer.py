@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 from collections import Counter
 
-from posejdon.core.enums import DocumentKind, PolicyProfileName, ProcessingMode
+from posejdon.core.enums import DocumentKind, PolicyProfileName, ProcessingMode, ReplacementKind
 from posejdon.detectors.fusion import DetectorFusion
 from posejdon.detectors.gliner_detector import GLiNERDetector
 from posejdon.detectors.mention_memory import expand_person_mentions
@@ -32,8 +32,13 @@ class TextAnonymizer:
         gliner_model: str = "urchade/gliner_small-v2.1",
         gliner_threshold: float = 0.45,
         processing_mode: ProcessingMode = ProcessingMode.IRREVERSIBLE,
+        replacement_style: ReplacementKind | None = None,
     ) -> None:
         self.processing_mode = processing_mode
+        # Default replacement style applied to every call unless a per-call
+        # override is supplied. None keeps the policy/processing-mode default
+        # (irreversible category placeholders collapse to a fixed mask).
+        self.replacement_style = replacement_style
         self.detectors = []
 
         # Always include RegexDetector
@@ -58,7 +63,10 @@ class TextAnonymizer:
         )
         self.planner = ReplacementPlanner(policy=self.policy)
 
-    def anonymize(self, text: str) -> AnonymizationResult:
+    def anonymize(
+        self, text: str, replacement_style: ReplacementKind | None = None
+    ) -> AnonymizationResult:
+        style = replacement_style if replacement_style is not None else self.replacement_style
         # 1. Run all detectors and gather candidate entities
         candidates = []
         for detector in self.detectors:
@@ -74,6 +82,7 @@ class TextAnonymizer:
             entities=resolved,
             document_kind=DocumentKind.TEXT,
             processing_mode=self.processing_mode,
+            replacement_style=style,
         )
 
         # 4. Sort replacements by start offset descending to avoid index shifting
@@ -108,11 +117,13 @@ class TextAnonymizer:
             findings=dict(sorted(findings_counter.items())),
         )
 
-    def anonymize_segments(self, texts: list[str]) -> SegmentAnonymizationResult:
+    def anonymize_segments(
+        self, texts: list[str], replacement_style: ReplacementKind | None = None
+    ) -> SegmentAnonymizationResult:
         if not texts:
             return SegmentAnonymizationResult(texts=[], findings={})
         if len(texts) == 1:
-            result = self.anonymize(texts[0])
+            result = self.anonymize(texts[0], replacement_style)
             return SegmentAnonymizationResult(texts=[result.text], findings=result.findings)
 
         delimiter_root = _unique_segment_delimiter_root(texts)
@@ -121,7 +132,7 @@ class TextAnonymizer:
         for delimiter, text in zip(delimiters, texts[1:], strict=True):
             joined += delimiter + text
 
-        result = self.anonymize(joined)
+        result = self.anonymize(joined, replacement_style)
         remaining = result.text
         anonymized_texts: list[str] = []
         for delimiter in delimiters:

@@ -29,12 +29,13 @@ class ReplacementPlanner:
         entities: list[SensitiveEntity],
         document_kind,
         processing_mode: ProcessingMode = ProcessingMode.IRREVERSIBLE,
+        replacement_style: ReplacementKind | None = None,
     ) -> ReplacementPlan:
         resolved, conflicts = self.overlap_resolver.resolve(entities)
         warnings: list[str] = []
         replacements: list[Replacement] = []
         counters: dict[str, int] = defaultdict(int)
-        strategy = self._strategy(processing_mode)
+        strategy = self._strategy(processing_mode, replacement_style)
 
         for entity in resolved:
             if not self.confidence_policy.should_review(entity):
@@ -74,16 +75,31 @@ class ReplacementPlanner:
             warnings=warnings,
         )
 
-    def _strategy(self, processing_mode: ProcessingMode):
+    def _strategy(
+        self,
+        processing_mode: ProcessingMode,
+        replacement_style: ReplacementKind | None = None,
+    ):
+        # Reversible lineage always needs reinjectable placeholders, so masking
+        # styles can never apply here regardless of the requested override.
         if processing_mode == ProcessingMode.REVERSIBLE:
             return DeterministicPlaceholderStrategy()
-        if (
-            processing_mode == ProcessingMode.IRREVERSIBLE
-            and self.policy.replacement_style == ReplacementKind.CATEGORY_PLACEHOLDER
-        ):
+        # An explicit caller override wins over the policy default, including the
+        # irreversible category-placeholder -> fixed-mask shortcut below.
+        if replacement_style is not None:
+            return self._explicit_strategy(replacement_style)
+        if self.policy.replacement_style == ReplacementKind.CATEGORY_PLACEHOLDER:
             return FixedMaskStrategy()
         if self.policy.replacement_style == ReplacementKind.MASK:
             return MaskingStrategy()
         if self.policy.replacement_style == ReplacementKind.FORMAT_PRESERVING:
+            return FormatPreservingStrategy()
+        return DeterministicPlaceholderStrategy()
+
+    @staticmethod
+    def _explicit_strategy(replacement_style: ReplacementKind):
+        if replacement_style == ReplacementKind.MASK:
+            return FixedMaskStrategy()
+        if replacement_style == ReplacementKind.FORMAT_PRESERVING:
             return FormatPreservingStrategy()
         return DeterministicPlaceholderStrategy()
