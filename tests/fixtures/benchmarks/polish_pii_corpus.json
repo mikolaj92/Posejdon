@@ -1,0 +1,83 @@
+{
+  "benchmark_id": "polish_pii_corpus_v1",
+  "overall_recall_target": 0.99,
+  "samples": [
+    {
+      "id": "identity_core",
+      "text": "Klientka: Anna Maria Nowak-Kowalska, PESEL 44051401359, NIP 856-734-62-15, data urodzenia: 14.05.1944.",
+      "entities": [
+        {"type": "PERSON", "text": "Anna Maria Nowak-Kowalska"},
+        {"type": "PESEL", "text": "44051401359"},
+        {"type": "NIP", "text": "856-734-62-15"},
+        {"type": "DATE_OF_BIRTH", "text": "14.05.1944"}
+      ]
+    },
+    {
+      "id": "person_alias_contact",
+      "text": "Kontakt: J. Kowalski, e-mail jkowalski@example.pl, tel. (+48) 500 600 700. Spotkanie z Panią Nowak zaplanowano na jutro.",
+      "entities": [
+        {"type": "PERSON", "text": "J. Kowalski"},
+        {"type": "EMAIL", "text": "jkowalski@example.pl"},
+        {"type": "PHONE", "text": "(+48) 500 600 700"},
+        {"type": "PERSON", "text": "Nowak"}
+      ]
+    },
+    {
+      "id": "addresses_and_locations",
+      "text": "Adres: ul. Żurawia 12/7, 00-515 Warszawa. Adres korespondencyjny: 31-147 Kraków. Materiały obejmują korespondencję z Łódźa i przekazania kluczy w Wrocławu przy Piotrkowskiej.",
+      "entities": [
+        {"type": "ADDRESS", "text": "ul. Żurawia 12/7, 00-515 Warszawa"},
+        {"type": "ADDRESS", "text": "31-147 Kraków"},
+        {"type": "POSTAL_CODE", "text": "00-515"},
+        {"type": "POSTAL_CODE", "text": "31-147"},
+        {"type": "STREET", "text": "Żurawia"},
+        {"type": "CITY", "text": "Łódźa"},
+        {"type": "CITY", "text": "Wrocławu"},
+        {"type": "STREET", "text": "Piotrkowskiej"}
+      ]
+    },
+    {
+      "id": "financial_and_registry",
+      "text": "Rachunek bankowy 61 1090 1014 0000 0712 1981 2874. KRS 0000123456. REGON: 192598184. VAT UE: PL8567346215.",
+      "entities": [
+        {"type": "BANK_ACCOUNT", "text": "61 1090 1014 0000 0712 1981 2874"},
+        {"type": "KRS", "text": "0000123456"},
+        {"type": "REGON", "text": "192598184"},
+        {"type": "VAT_ID", "text": "PL8567346215"}
+      ]
+    },
+    {
+      "id": "document_and_workflow_refs",
+      "text": "Umowa nr UM/2026/03/001. Nr dokumentu ABA123456. Klient ID CL-2026-9001. Pracownik ID EMP-7788. Faktura nr FV/2026/03/17. Zamówienie nr ORD-2026-44. Polisa nr POL-2026-88. Szkoda nr CLM-2026-11.",
+      "entities": [
+        {"type": "CONTRACT_NUMBER", "text": "UM/2026/03/001"},
+        {"type": "DOCUMENT_NUMBER", "text": "ABA123456"},
+        {"type": "CLIENT_ID", "text": "CL-2026-9001"},
+        {"type": "EMPLOYEE_ID", "text": "EMP-7788"},
+        {"type": "INVOICE_NUMBER", "text": "FV/2026/03/17"},
+        {"type": "ORDER_NUMBER", "text": "ORD-2026-44"},
+        {"type": "POLICY_NUMBER", "text": "POL-2026-88"},
+        {"type": "CLAIM_NUMBER", "text": "CLM-2026-11"}
+      ]
+    },
+    {
+      "id": "technical_and_document_ids",
+      "text": "Pojazd KR 7MZ18 i identyfikator host-waw-01. Dostęp z 83.21.144.9. Paszport nr AB1234567. Prawo jazdy nr XYZ-778899.",
+      "entities": [
+        {"type": "VEHICLE_REGISTRATION", "text": "KR 7MZ18"},
+        {"type": "DEVICE_ID", "text": "host-waw-01"},
+        {"type": "IP_ADDRESS", "text": "83.21.144.9"},
+        {"type": "PASSPORT_NUMBER", "text": "AB1234567"},
+        {"type": "DRIVER_LICENSE_NUMBER", "text": "XYZ-778899"}
+      ]
+    },
+    {
+      "id": "org_and_representative",
+      "text": "Kontrahent ACME Polska sp. z o.o. reprezentowany przez Piotra Wiśniewskiego.",
+      "entities": [
+        {"type": "ORG", "text": "ACME Polska sp. z o.o."},
+        {"type": "PERSON", "text": "Piotra Wiśniewskiego"}
+      ]
+    }
+  ]
+}
