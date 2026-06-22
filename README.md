@@ -33,3 +33,9 @@ from posejdon import TextAnonymizer
 
 anonymizer = TextAnonymizer(gliner_enabled=True)
 ```
+
+## Tests
+
+```bash
+uv run --extra dev pytest
+```

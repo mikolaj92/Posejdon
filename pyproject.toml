@@ -39,6 +39,9 @@ build-backend = "hatchling.build"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+markers = [
+  "benchmark: performance regression checks",
+]
 
 [tool.ruff]
 line-length = 100
