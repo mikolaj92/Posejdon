@@ -1,4 +1,4 @@
-from posejdon import ProcessingMode, TextAnonymizer
+from posejdon import ProcessingMode, ReplacementKind, TextAnonymizer
 
 
 def test_text_anonymizer_compatibility_anonymizes_pii() -> None:
@@ -30,6 +30,42 @@ def test_text_anonymizer_reversible_mode_keeps_reinjectable_placeholders() -> No
     assert "[PESEL_1]" in result.text
     assert "[NIP_1]" in result.text
     assert "****" not in result.text
+
+
+def test_text_anonymizer_category_style_keeps_labels_without_reversible_mode() -> None:
+    anonymizer = TextAnonymizer(replacement_style=ReplacementKind.CATEGORY_PLACEHOLDER)
+    text = "Jan Kowalski ma PESEL 44051401359 oraz NIP 8567346215"
+    result = anonymizer.anonymize(text)
+
+    assert "[OSOBA_1]" in result.text
+    assert "[PESEL_1]" in result.text
+    assert "[NIP_1]" in result.text
+    assert "****" not in result.text
+
+
+def test_text_anonymizer_per_call_style_overrides_default() -> None:
+    anonymizer = TextAnonymizer(replacement_style=ReplacementKind.CATEGORY_PLACEHOLDER)
+    text = "Jan Kowalski ma PESEL 44051401359 oraz NIP 8567346215"
+
+    masked = anonymizer.anonymize(text, replacement_style=ReplacementKind.MASK)
+
+    assert "[OSOBA_1]" not in masked.text
+    assert masked.text.count("****") == 3
+
+
+def test_text_anonymizer_segments_honor_category_style() -> None:
+    anonymizer = TextAnonymizer(replacement_style=ReplacementKind.CATEGORY_PLACEHOLDER)
+    result = anonymizer.anonymize_segments(
+        [
+            "Jan Kowalski podpisał umowę.",
+            "PESEL 44051401359 widnieje w aktach.",
+        ]
+    )
+
+    joined = "".join(result.texts)
+    assert "[OSOBA_1]" in joined
+    assert "[PESEL_1]" in joined
+    assert "****" not in joined
 
 
 def test_text_anonymizer_expands_unambiguous_person_mentions() -> None:

@@ -113,3 +113,60 @@ def test_reversible_mode_overrides_non_reinjectable_mask_policy() -> None:
     assert {replacement.replacement_kind for replacement in plan.replacements} == {
         ReplacementKind.CATEGORY_PLACEHOLDER
     }
+
+
+def test_explicit_category_override_keeps_labels_in_irreversible_mode() -> None:
+    planner = ReplacementPlanner(policy=_policy(ReplacementKind.CATEGORY_PLACEHOLDER))
+
+    plan = planner.plan(
+        entities=_entities(),
+        document_kind=DocumentKind.TEXT,
+        processing_mode=ProcessingMode.IRREVERSIBLE,
+        replacement_style=ReplacementKind.CATEGORY_PLACEHOLDER,
+    )
+
+    assert [replacement.replacement_text for replacement in plan.replacements] == [
+        "[OSOBA_1]",
+        "[PESEL_1]",
+    ]
+    assert {replacement.replacement_kind for replacement in plan.replacements} == {
+        ReplacementKind.CATEGORY_PLACEHOLDER
+    }
+    assert [replacement.source_text for replacement in plan.replacements] == [None, None]
+
+
+def test_explicit_mask_override_uses_fixed_mask_in_irreversible_mode() -> None:
+    planner = ReplacementPlanner(policy=_policy(ReplacementKind.CATEGORY_PLACEHOLDER))
+
+    plan = planner.plan(
+        entities=_entities(),
+        document_kind=DocumentKind.TEXT,
+        processing_mode=ProcessingMode.IRREVERSIBLE,
+        replacement_style=ReplacementKind.MASK,
+    )
+
+    assert [replacement.replacement_text for replacement in plan.replacements] == ["****", "****"]
+    assert {replacement.replacement_kind for replacement in plan.replacements} == {
+        ReplacementKind.MASK
+    }
+    assert [replacement.source_text for replacement in plan.replacements] == [None, None]
+
+
+def test_explicit_override_cannot_mask_in_reversible_mode() -> None:
+    planner = ReplacementPlanner(policy=_policy(ReplacementKind.CATEGORY_PLACEHOLDER))
+
+    plan = planner.plan(
+        entities=_entities(),
+        document_kind=DocumentKind.TEXT,
+        processing_mode=ProcessingMode.REVERSIBLE,
+        replacement_style=ReplacementKind.MASK,
+    )
+
+    assert [replacement.replacement_text for replacement in plan.replacements] == [
+        "[OSOBA_1]",
+        "[PESEL_1]",
+    ]
+    assert [replacement.source_text for replacement in plan.replacements] == [
+        "Jan Kowalski",
+        "44051401359",
+    ]
