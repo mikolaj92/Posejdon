@@ -44,7 +44,7 @@ def _entities() -> list[SensitiveEntity]:
     ]
 
 
-def test_irreversible_category_placeholders_become_fixed_masks() -> None:
+def test_irreversible_category_placeholders_stay_labeled_but_unrecoverable() -> None:
     planner = ReplacementPlanner(policy=_policy(ReplacementKind.CATEGORY_PLACEHOLDER))
 
     plan = planner.plan(
@@ -53,9 +53,15 @@ def test_irreversible_category_placeholders_become_fixed_masks() -> None:
         processing_mode=ProcessingMode.IRREVERSIBLE,
     )
 
-    assert [replacement.replacement_text for replacement in plan.replacements] == ["****", "****"]
+    # replacement_style governs the rendered format, processing_mode only governs
+    # recoverability: a CATEGORY_PLACEHOLDER policy keeps labeled placeholders even
+    # in irreversible mode, but persists no restore mapping (source_text is None).
+    assert [replacement.replacement_text for replacement in plan.replacements] == [
+        "[OSOBA_1]",
+        "[PESEL_1]",
+    ]
     assert {replacement.replacement_kind for replacement in plan.replacements} == {
-        ReplacementKind.MASK
+        ReplacementKind.CATEGORY_PLACEHOLDER
     }
     assert [replacement.source_text for replacement in plan.replacements] == [None, None]
 

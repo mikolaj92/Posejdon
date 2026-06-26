@@ -10,7 +10,14 @@ def test_text_anonymizer_compatibility_anonymizes_pii() -> None:
     assert "44051401359" not in result.text
     assert "8567346215" not in result.text
 
-    assert result.text.count("****") == 3
+    # The default EXTERNAL_IRREVERSIBLE policy uses a CATEGORY_PLACEHOLDER style,
+    # so the compatibility anonymizer emits labeled placeholders (an irreversible
+    # run simply keeps no restore mapping). A fixed "****" mask is only produced
+    # by an explicit MASK style.
+    assert "[OSOBA_1]" in result.text
+    assert "[PESEL_1]" in result.text
+    assert "[NIP_1]" in result.text
+    assert "****" not in result.text
 
     assert result.findings["PERSON"] == 1
     assert result.findings["PESEL"] == 1

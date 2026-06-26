@@ -89,7 +89,13 @@ class ReplacementPlanner:
         if replacement_style is not None:
             return self._explicit_strategy(replacement_style)
         if self.policy.replacement_style == ReplacementKind.CATEGORY_PLACEHOLDER:
-            return FixedMaskStrategy()
+            # Format is governed by replacement_style, recoverability by
+            # processing_mode (the latter nulls source_text for irreversible runs
+            # at the call site). A CATEGORY_PLACEHOLDER policy therefore always
+            # emits labeled placeholders; irreversible runs simply keep no
+            # restore mapping. Collapsing labels to a fixed mask here would also
+            # strip the anchors downstream reinjection relies on.
+            return DeterministicPlaceholderStrategy()
         if self.policy.replacement_style == ReplacementKind.MASK:
             return MaskingStrategy()
         if self.policy.replacement_style == ReplacementKind.FORMAT_PRESERVING:
