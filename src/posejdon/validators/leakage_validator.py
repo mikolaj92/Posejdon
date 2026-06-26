@@ -128,6 +128,8 @@ class LeakageValidator:
 
         full_text = "\n".join(segment_lookup.values())
         for entity in entities:
+            if entity.segment_id is not None:
+                continue
             if self._contains_surface(full_text, entity.raw_text):
                 global_findings.add(entity.raw_text)
             if self._normalized_contains(full_text, entity.raw_text):
@@ -168,9 +170,9 @@ class LeakageValidator:
     @classmethod
     def _normalized_surface_pattern(cls, surface: str) -> re.Pattern[str] | None:
         cleaned = cls._normalize_text(surface)
-        if not cleaned:
+        parts = cleaned.split()
+        if not parts:
             return None
-        parts = cleaned.split(" ")
         escaped = [re.escape(part) for part in parts]
         return re.compile(rf"(?<!\w){'\\s+'.join(escaped)}(?!\w)")
 

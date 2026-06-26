@@ -115,6 +115,12 @@ class ReinjectionReport(BaseModel):
     restore_kind: str = "reinjection_restore"
     mapping_vault_id: str
     edited_input_hash: str
+    reinjected_artifact_hash: str | None = None
+    reinjected_matches_edited_input: bool | None = None
+    reinjected_matches_source_output: bool | None = None
+    placeholders_requested: int = 0
+    placeholders_reinjected: int = 0
+    reinjection_effective: bool | None = None
     source_output_artifact_path: str
     source_output_hash: str
     injector_export_path: str

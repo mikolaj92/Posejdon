@@ -22,6 +22,9 @@ dependencies = [
 detectors = [
   "gliner>=0.2.22",
 ]
+spacy = [
+  "spacy>=3.8.7",
+]
 llm = [
   "mlx>=0.31.0",
   "mlx-lm>=0.31.0",

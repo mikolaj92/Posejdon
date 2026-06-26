@@ -8,7 +8,12 @@ from posejdon.domain.policies import (
     ENTITY_GROUPS,
     expand_entity_groups,
 )
-from posejdon.domain.reports import LeakageScanResult, ProcessingReport, ValidationResult
+from posejdon.domain.reports import (
+    LeakageScanResult,
+    ProcessingReport,
+    ReinjectionReport,
+    ValidationResult,
+)
 
 
 def test_policy_profiles_include_required_defaults() -> None:
@@ -44,6 +49,61 @@ def test_processing_report_supports_required_fields() -> None:
     assert report.coverage_summary.mention_memory_expanded_count == 2
     assert report.coverage_summary.mention_memory_ambiguous_skip_count == 3
     assert report.detector_summary.llm_runtime_status == "ready"
+
+
+def test_reinjection_report_carries_reinjection_proof_fields() -> None:
+    report = ReinjectionReport(
+        mapping_vault_id="vault-1",
+        edited_input_hash="edited-hash",
+        reinjected_artifact_hash="reinjected-hash",
+        reinjected_matches_edited_input=True,
+        reinjected_matches_source_output=False,
+        placeholders_requested=4,
+        placeholders_reinjected=4,
+        reinjection_effective=True,
+        source_output_artifact_path="out.docx",
+        source_output_hash="out-hash",
+        injector_export_path="export.json",
+        injector_export_hash="export-hash",
+        status="succeeded",
+    )
+
+    payload = report.model_dump()
+    assert payload["reinjected_artifact_hash"] == "reinjected-hash"
+    assert payload["reinjected_matches_edited_input"] is True
+    assert payload["reinjected_matches_source_output"] is False
+    assert payload["placeholders_requested"] == 4
+    assert payload["placeholders_reinjected"] == 4
+    assert payload["reinjection_effective"] is True
+
+    # Backward compatibility: the proof fields default when omitted.
+    minimal = ReinjectionReport(
+        mapping_vault_id="vault-2",
+        edited_input_hash="edited-hash",
+        source_output_artifact_path="out.docx",
+        source_output_hash="out-hash",
+        injector_export_path="export.json",
+        injector_export_hash="export-hash",
+        status="succeeded",
+    )
+    assert minimal.reinjected_artifact_hash is None
+    assert minimal.reinjection_effective is None
+    assert minimal.placeholders_requested == 0
+    assert minimal.placeholders_reinjected == 0
+
+
+def test_detector_summary_exposes_spacy_state() -> None:
+    assert DetectorSummary().spacy_enabled is False
+    assert DetectorSummary().spacy_status == "disabled"
+    enabled = DetectorSummary(spacy_enabled=True, spacy_status="ready")
+    assert enabled.model_dump()["spacy_enabled"] is True
+    assert enabled.model_dump()["spacy_status"] == "ready"
+
+
+def test_settings_expose_spacy_flags() -> None:
+    settings = PosejdonSettings()
+    assert settings.enable_spacy is True
+    assert settings.require_spacy is False
 
 
 def test_processing_mode_enum_exposes_reversible_mode() -> None:
