@@ -12,23 +12,24 @@ from posejdon.domain.artifacts import MappingVaultRecord
 
 
 class MappingVaultStore:
-    def __init__(self, root: str, hmac_key: str | None = None) -> None:
+    def __init__(self, root: str, hmac_key: str) -> None:
+        if not hmac_key:
+            raise ValueError("Vault hmac_key must be provided.")
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=True)
         os.chmod(self.root, 0o700)
-        self._hmac_key = hmac_key.encode("utf-8") if hmac_key else None
+        self._hmac_key = hmac_key.encode("utf-8")
 
     def save(self, record: MappingVaultRecord) -> Path:
         path = self.root / f"{record.vault_id}.json"
         payload = record.model_dump(mode="json")
-        if self._hmac_key is not None:
-            payload.pop("vault_hmac", None)
-            canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
-            record.vault_hmac = hmac.new(
-                self._hmac_key,
-                canonical.encode("utf-8"),
-                hashlib.sha256,
-            ).hexdigest()
+        payload.pop("vault_hmac", None)
+        canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        record.vault_hmac = hmac.new(
+            self._hmac_key,
+            canonical.encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
         path.write_text(record.model_dump_json(indent=2), encoding="utf-8")
         os.chmod(path, 0o600)
         return path
@@ -38,7 +39,7 @@ class MappingVaultStore:
         raw = json.loads(path.read_text(encoding="utf-8"))
         stored_hmac = raw.pop("vault_hmac", None)
         record = MappingVaultRecord.model_validate(raw)
-        if stored_hmac is not None and self._hmac_key is not None:
+        if stored_hmac is not None:
             canonical = json.dumps(raw, sort_keys=True, separators=(",", ":"))
             computed = hmac.new(
                 self._hmac_key,

@@ -9,7 +9,9 @@ from posejdon.domain.artifacts import AnonymizationAuditTrail, AuditRecord
 
 
 class AuditStore:
-    def __init__(self, root: str, secret: str = "posejdon") -> None:
+    def __init__(self, root: str, secret: str) -> None:
+        if not secret:
+            raise ValueError("Audit HMAC secret must be provided.")
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=True)
         self._secret = secret
