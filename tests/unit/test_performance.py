@@ -15,6 +15,12 @@ from posejdon.planners.replacement_planner import ReplacementPlanner
 from posejdon.storage.vault import MappingVaultStore
 
 
+@pytest.mark.parametrize("hmac_key", [None, ""])
+def test_mapping_vault_store_rejects_missing_or_empty_hmac_key(tmp_path, hmac_key) -> None:
+    with pytest.raises(ValueError, match="hmac_key"):
+        MappingVaultStore(root=str(tmp_path / "vault"), hmac_key=hmac_key)
+
+
 @pytest.mark.benchmark
 class TestPosejdonPerformance:
     """Performance regression tests for Posejdon anonymization pipeline."""
@@ -61,7 +67,7 @@ class TestPosejdonPerformance:
         )
 
     def test_vault_store_and_load_completes_within_timeout(self, tmp_path) -> None:
-        vault_store = MappingVaultStore(root=str(tmp_path / "vault"))
+        vault_store = MappingVaultStore(root=str(tmp_path / "vault"), hmac_key="test_secret")
         record = MappingVaultRecord(
             vault_id="doc1",
             mode=ProcessingMode.IRREVERSIBLE,

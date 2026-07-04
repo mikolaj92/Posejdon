@@ -1,5 +1,7 @@
 from datetime import UTC, datetime
 
+import pytest
+
 from posejdon.core.enums import AuditStatus, DocumentKind, ProcessingMode
 from posejdon.domain.artifacts import (
     AnonymizationAuditTrail,
@@ -154,8 +156,14 @@ def test_audit_record_with_entity_audit_and_mode_auth() -> None:
     assert record.mode_authorization.authorization_source == "runtime_default"
 
 
+@pytest.mark.parametrize("secret", [None, ""])
+def test_audit_store_rejects_missing_or_empty_secret(tmp_path, secret) -> None:
+    with pytest.raises(ValueError, match="secret"):
+        AuditStore(str(tmp_path), secret=secret)
+
+
 def test_audit_store_chain_hash_computation(tmp_path) -> None:
-    store = AuditStore(str(tmp_path))
+    store = AuditStore(str(tmp_path), secret="test_secret")
     record = AuditRecord(
         audit_id="AUD_001",
         mode=ProcessingMode.IRREVERSIBLE,
@@ -176,7 +184,7 @@ def test_audit_store_chain_hash_computation(tmp_path) -> None:
 
 
 def test_audit_store_chain_verification_detects_tampering(tmp_path) -> None:
-    store = AuditStore(str(tmp_path))
+    store = AuditStore(str(tmp_path), secret="test_secret")
     record = AuditRecord(
         audit_id="AUD_002",
         mode=ProcessingMode.IRREVERSIBLE,
@@ -202,7 +210,7 @@ def test_audit_store_chain_verification_detects_tampering(tmp_path) -> None:
 
 
 def test_audit_store_previous_hash_links_records(tmp_path) -> None:
-    store = AuditStore(str(tmp_path))
+    store = AuditStore(str(tmp_path), secret="test_secret")
 
     record1 = AuditRecord(
         audit_id="AUD_003",
@@ -241,7 +249,7 @@ def test_audit_store_previous_hash_links_records(tmp_path) -> None:
 
 
 def test_audit_store_list_all_returns_sorted_records(tmp_path) -> None:
-    store = AuditStore(str(tmp_path))
+    store = AuditStore(str(tmp_path), secret="test_secret")
 
     for i in range(3):
         record = AuditRecord(
