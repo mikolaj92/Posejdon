@@ -4,6 +4,17 @@ import hashlib
 
 from posejdon.domain.entities import SensitiveEntity
 
+# GLiNER only extracts the entity kinds it is prompted with, so callers that hand
+# it a bare string (no labels) get nothing back. These are the recall gaps the
+# regex/gazetteer detectors leave -- free-form names, organizations and places --
+# each mapped to the canonical Posejdon entity type the planner expects.
+_DEFAULT_LABELS: dict[str, str] = {
+    "person": "PERSON",
+    "organization": "ORG",
+    "location": "CITY",
+    "address": "ADDRESS",
+}
+
 
 class GLiNERDetector:
     name = "gliner"
@@ -18,16 +29,25 @@ class GLiNERDetector:
         self.model_name = model_name
         self.local_files_only = local_files_only
         self.threshold = threshold
-        self._model = None
+        self._model = self._load_model(model_name, local_files_only)
+
+    @staticmethod
+    def _load_model(model_name: str, local_files_only: bool):
         try:
             from gliner import GLiNER
-
-            self._model = GLiNER.from_pretrained(
-                model_name,
-                local_files_only=local_files_only,
-            )
         except Exception:
-            self._model = None
+            return None
+        try:
+            return GLiNER.from_pretrained(model_name, local_files_only=local_files_only)
+        except Exception:
+            # The weights are just a public NER model, not user data: if they are
+            # not cached yet, fetch them once rather than silently no-op.
+            if not local_files_only:
+                return None
+            try:
+                return GLiNER.from_pretrained(model_name, local_files_only=False)
+            except Exception:
+                return None
 
     @property
     def available(self) -> bool:
@@ -36,8 +56,9 @@ class GLiNERDetector:
     def detect(self, text: str, labels: list[str] | None = None) -> list[SensitiveEntity]:
         if self._model is None:
             return []
+        prompt_labels = labels or list(_DEFAULT_LABELS)
         try:
-            predictions = self._model.predict_entities(text, labels=labels or [])
+            predictions = self._model.predict_entities(text, labels=prompt_labels)
         except Exception:
             return []
 
@@ -49,14 +70,16 @@ class GLiNERDetector:
             score = float(item.get("score", 0.65))
             if score < self.threshold:
                 continue
+            label = str(item["label"])
+            entity_type = _DEFAULT_LABELS.get(label, label.upper())
             digest = hashlib.sha1(
-                f"gliner|{item['label']}|{start}|{end}|{raw}".encode(),
+                f"gliner|{label}|{start}|{end}|{raw}".encode(),
                 usedforsecurity=False,
             ).hexdigest()[:12]
             entities.append(
                 SensitiveEntity(
                     entity_id=f"ENT_{digest}",
-                    entity_type=str(item["label"]).upper(),
+                    entity_type=entity_type,
                     raw_text=raw,
                     normalized_text=raw.strip(),
                     confidence=score,
