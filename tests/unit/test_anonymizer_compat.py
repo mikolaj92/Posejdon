@@ -93,6 +93,52 @@ def test_text_anonymizer_expands_unambiguous_person_mentions() -> None:
     assert result.findings["PERSON"] >= 6
 
 
+def test_text_anonymizer_remembers_ec_surname_genitive_mentions() -> None:
+    result = TextAnonymizer().anonymize(
+        "Piotr Malec podpisał umowę. W notatce wskazano pana Malca."
+    )
+
+    assert "Piotr Malec" not in result.text
+    assert "Malca" not in result.text
+    assert result.findings["PERSON"] >= 2
+
+
+def test_text_anonymizer_reuses_person_token_for_close_first_name_typo() -> None:
+    anonymizer = TextAnonymizer()
+    text = "Patryka Kowalskiego wskazano w umowie. Patyrk Kowalski podpisał aneks."
+
+    result = anonymizer.anonymize(text)
+
+    assert "Patryka Kowalskiego" not in result.text
+    assert "Patyrk Kowalski" not in result.text
+    assert result.text.count("[OSOBA_1]") == 2
+    assert "[OSOBA_2]" not in result.text
+
+
+def test_text_anonymizer_does_not_merge_distinct_close_surnames() -> None:
+    anonymizer = TextAnonymizer()
+    text = "Jan Mikołajczyk podpisał umowę. Jan Mikołajczak podpisał aneks."
+
+    result = anonymizer.anonymize(text)
+
+    assert "Mikołajczyk" not in result.text
+    assert "Mikołajczak" not in result.text
+    assert "[OSOBA_1]" in result.text
+    assert "[OSOBA_2]" in result.text
+
+
+def test_text_anonymizer_does_not_merge_gendered_surname_forms_as_one_person() -> None:
+    anonymizer = TextAnonymizer()
+    text = "Jan Majewski podpisał umowę. Anna Majewska podpisała aneks."
+
+    result = anonymizer.anonymize(text)
+
+    assert "Jan Majewski" not in result.text
+    assert "Anna Majewska" not in result.text
+    assert "[OSOBA_1]" in result.text
+    assert "[OSOBA_2]" in result.text
+
+
 def test_text_anonymizer_does_not_expand_ambiguous_first_name_mentions() -> None:
     anonymizer = TextAnonymizer()
     text = (

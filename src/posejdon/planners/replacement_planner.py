@@ -16,6 +16,36 @@ from posejdon.planners.placeholder_strategy import (
 )
 
 
+def _person_counter_key(entity: SensitiveEntity) -> tuple[str, str] | None:
+    if entity.entity_type != "PERSON":
+        return None
+    provenance = entity.mention_provenance()
+    if provenance is None:
+        return entity.entity_type, entity.entity_id
+    return entity.entity_type, provenance.mention_cluster_id
+
+
+def _person_cluster_ordinals(entities: list[SensitiveEntity]) -> dict[tuple[str, str], int]:
+    ordinals: dict[tuple[str, str], int] = {}
+    person_count = 0
+    for entity in entities:
+        if entity.entity_type != "PERSON" or entity.mention_provenance() is not None:
+            continue
+        key = _person_counter_key(entity)
+        if key is None or key in ordinals:
+            continue
+        person_count += 1
+        ordinals[key] = person_count
+    for entity in entities:
+        provenance = entity.mention_provenance()
+        if entity.entity_type == "PERSON" and provenance is not None:
+            ordinals[(entity.entity_type, provenance.mention_cluster_id)] = ordinals.get(
+                (entity.entity_type, provenance.canonical_entity_id),
+                person_count + 1,
+            )
+    return ordinals
+
+
 class ReplacementPlanner:
     def __init__(self, policy: PolicyProfileDefinition, secret: str = "posejdon") -> None:
         self.policy = policy
@@ -35,6 +65,7 @@ class ReplacementPlanner:
         warnings: list[str] = []
         replacements: list[Replacement] = []
         counters: dict[str, int] = defaultdict(int)
+        cluster_ordinals = _person_cluster_ordinals(resolved)
         strategy = self._strategy(processing_mode, replacement_style)
 
         for entity in resolved:
@@ -46,8 +77,12 @@ class ReplacementPlanner:
                     f"Entity {entity.entity_id} below accept threshold included conservatively."
                 )
 
-            counters[entity.entity_type] += 1
-            replacement_text = strategy.replace(entity, counters[entity.entity_type])
+            counter_key = _person_counter_key(entity)
+            ordinal = cluster_ordinals.get(counter_key) if counter_key is not None else None
+            if ordinal is None:
+                counters[entity.entity_type] += 1
+                ordinal = counters[entity.entity_type]
+            replacement_text = strategy.replace(entity, ordinal)
             replacements.append(
                 Replacement(
                     entity_id=entity.entity_id,

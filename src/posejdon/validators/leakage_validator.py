@@ -57,6 +57,22 @@ class LeakageValidator:
         if document_kind == DocumentKind.XML:
             return XMLParser().parse(path).text_segments
 
+        if document_kind == DocumentKind.TEXT:
+            with open(path, encoding="utf-8") as file:
+                text = file.read()
+            if not text:
+                return []
+            return [
+                ParsedTextSegment(
+                    segment_id="text:0",
+                    text=text,
+                    container_id="text:0",
+                    section_id="text:0",
+                    start_offset=0,
+                    end_offset=len(text),
+                )
+            ]
+
         pdf = fitz.open(path)
         try:
             segments: list[ParsedTextSegment] = []

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import fitz
 from docx import Document
 from posejdon_docs.parsers.json_parser import JSONParser
@@ -75,6 +77,10 @@ class StructuralValidator:
                 if len(original.text_segments) != len(output.text_segments):
                     warnings.append("XML text and attribute segment count changed.")
                 checks.append("xml_segment_count_checked")
+            elif document_kind == DocumentKind.TEXT:
+                Path(input_path).read_text(encoding="utf-8")
+                Path(output_path).read_text(encoding="utf-8")
+                checks.append("text_opened")
         except Exception as exc:
             errors.append(str(exc))
 

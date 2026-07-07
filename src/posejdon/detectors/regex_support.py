@@ -249,6 +249,30 @@ POLISH_FIRST_NAME_FORMS: frozenset[str] = frozenset(
     }
 )
 
+
+def _feminine_instrumental_forms(forms: frozenset[str]) -> set[str]:
+    """Derive the missing instrumental '-ą' form for curated feminine first names.
+
+    Curated feminine names carried the nominative ('Anna') and other oblique
+    cases ('Annę'/'Anny'/'Annie') but usually not the instrumental ('Anną'), so
+    'Panią Anną Nowak' slipped through the ``given_first_name`` heuristic. Only
+    names already tracked in an oblique case are expanded, which keeps masculine
+    genitives ('Jana', 'Adama') from sprouting bogus '-ą' forms.
+    """
+    derived: set[str] = set()
+    for name in forms:
+        if not name.endswith("a"):
+            continue
+        stem = name[:-1]
+        if any(stem + suffix in forms for suffix in ("ę", "y", "i")):
+            derived.add(stem + "ą")
+    return derived
+
+
+POLISH_FIRST_NAME_FORMS = frozenset(
+    POLISH_FIRST_NAME_FORMS | _feminine_instrumental_forms(POLISH_FIRST_NAME_FORMS)
+)
+
 COMMON_POLISH_SURNAMES: frozenset[str] = frozenset(
     {
         "Adamski",

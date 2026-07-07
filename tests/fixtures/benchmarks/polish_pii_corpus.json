@@ -78,6 +78,32 @@
         {"type": "ORG", "text": "ACME Polska sp. z o.o."},
         {"type": "PERSON", "text": "Piotra Wiśniewskiego"}
       ]
+    },
+    {
+      "id": "person_typo_same_surname",
+      "text": "W umowie wskazano Patryka Kowalskiego jako wykonawcę. W załączniku Patyrk Kowalski podał numer konta.",
+      "entities": [
+        {"type": "PERSON", "text": "Patryka Kowalskiego"},
+        {"type": "PERSON", "text": "Patyrk Kowalski"}
+      ]
+    },
+    {
+      "id": "person_inflected_and_initial_mentions",
+      "text": "Piotr Malec podpisał umowę. W notatce wskazano Piotra, pana Malca oraz P. Malec jako osobę kontaktową.",
+      "entities": [
+        {"type": "PERSON", "text": "Piotr Malec"},
+        {"type": "PERSON", "text": "Piotra"},
+        {"type": "PERSON", "text": "Malca"},
+        {"type": "PERSON", "text": "P. Malec"}
+      ]
+    },
+    {
+      "id": "person_distinct_close_surnames",
+      "text": "Jan Mikołajczyk podpisał umowę. Jan Mikołajczak podpisał osobny aneks.",
+      "entities": [
+        {"type": "PERSON", "text": "Jan Mikołajczyk"},
+        {"type": "PERSON", "text": "Jan Mikołajczak"}
+      ]
     }
   ]
 }

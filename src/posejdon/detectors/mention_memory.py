@@ -4,8 +4,9 @@ import hashlib
 import re
 from collections import defaultdict
 from dataclasses import dataclass
+from difflib import SequenceMatcher
 
-from posejdon.detectors.regex_support import build_entity_id
+from posejdon.detectors.regex_support import POLISH_FIRST_NAME_FORMS, build_entity_id
 from posejdon.domain.entities import MentionProvenance, SensitiveEntity
 
 PERSON_SEED_BLOCKLIST = frozenset({"pan", "pana", "pani", "panu"})
@@ -72,6 +73,9 @@ def expand_person_mentions(text: str, entities: list[SensitiveEntity]) -> list[S
             expanded.append(entity)
             occupied.append((start_offset, end_offset))
 
+    for entity in _fuzzy_full_name_mentions(text, entities, clusters, occupied):
+        expanded.append(entity)
+        occupied.append((entity.start_offset, entity.end_offset))
     if not expanded:
         return entities
     return sorted(
@@ -100,6 +104,7 @@ def _cluster_person_entities(entities: list[SensitiveEntity]) -> list[PersonMent
         surname_key = _normalize_person_surname_key(surname)
         grouped[(first_key, surname_key)].append((entity, first_name, surname))
 
+    grouped = _merge_fuzzy_person_groups(grouped)
     clusters: list[PersonMentionCluster] = []
     for (first_key, surname_key), members in grouped.items():
         canonical, first_name, surname = max(
@@ -230,6 +235,121 @@ def _split_canonical_person_name(text: str) -> tuple[str, str] | None:
     return parts[0], parts[1]
 
 
+def _fuzzy_full_name_mentions(
+    text: str,
+    entities: list[SensitiveEntity],
+    clusters: list[PersonMentionCluster],
+    occupied: list[tuple[int | None, int | None]],
+) -> list[SensitiveEntity]:
+    expanded: list[SensitiveEntity] = []
+    pattern = re.compile(
+        r"(?<!\w)(?P<first>[A-ZŁŚŻŹĆŃÓ][a-ząćęłńóśźż]{2,})\s+"
+        r"(?P<surname>[A-ZŁŚŻŹĆŃÓ][a-ząćęłńóśźż]+(?:-[A-ZŁŚŻŹĆŃÓ][a-ząćęłńóśźż]+)?)(?!\w)"
+    )
+    for match in pattern.finditer(text):
+        if _overlaps(occupied, start_offset=match.start(), end_offset=match.end()):
+            continue
+        first_name = match.group("first")
+        surname = match.group("surname")
+        first_key = _normalize_person_first_name_key(
+            first_name,
+            masculine_hint=_looks_like_masculine_surname(surname),
+        )
+        surname_key = _normalize_person_surname_key(surname)
+        candidates = [
+            cluster
+            for cluster in clusters
+            if cluster.surname_key == surname_key
+            and _similar_person_first_name_key(cluster.first_key, first_key)
+        ]
+        if len(candidates) != 1:
+            seed = _fuzzy_person_seed(entities, first_key=first_key, surname_key=surname_key)
+            if seed is None:
+                continue
+            candidates = [
+                PersonMentionCluster(
+                    cluster_id=_person_cluster_id(f"{first_key}|{surname_key}"),
+                    canonical_entity=seed,
+                    members=(seed,),
+                    first_name=first_name,
+                    surname=surname,
+                    first_key=first_key,
+                    surname_key=surname_key,
+                )
+            ]
+        expanded.append(
+            _build_mention_entity(
+                variant=PersonMentionVariant(
+                    cluster=candidates[0],
+                    surface=match.group(0),
+                    rule="fuzzy_full_name_typo",
+                ),
+                raw_text=match.group(0),
+                start_offset=match.start(),
+                end_offset=match.end(),
+            )
+        )
+    return expanded
+
+
+def _fuzzy_person_seed(
+    entities: list[SensitiveEntity],
+    *,
+    first_key: str,
+    surname_key: str,
+) -> SensitiveEntity | None:
+    matches = []
+    for entity in entities:
+        if entity.entity_type != "PERSON" or entity.mention_provenance() is not None:
+            continue
+        parts = _split_canonical_person_name(entity.raw_text)
+        if parts is None:
+            continue
+        first_name, surname = parts
+        if first_name.casefold() in POLISH_FIRST_NAME_FORMS:
+            continue
+        if _normalize_person_surname_key(surname) != surname_key:
+            continue
+        entity_first_key = _normalize_person_first_name_key(
+            first_name,
+            masculine_hint=_looks_like_masculine_surname(surname),
+        )
+        if _similar_person_first_name_key(entity_first_key, first_key):
+            matches.append(entity)
+    if len(matches) != 1:
+        return None
+    return matches[0]
+
+
+def _merge_fuzzy_person_groups(
+    grouped: dict[tuple[str, str], list[tuple[SensitiveEntity, str, str]]],
+) -> dict[tuple[str, str], list[tuple[SensitiveEntity, str, str]]]:
+    merged: dict[tuple[str, str], list[tuple[SensitiveEntity, str, str]]] = {}
+    canonical_keys: list[tuple[str, str]] = []
+    for key, members in grouped.items():
+        match = next(
+            (
+                existing
+                for existing in canonical_keys
+                if key[1] == existing[1] and _similar_person_first_name_key(key[0], existing[0])
+            ),
+            None,
+        )
+        target = match or key
+        if match is None:
+            canonical_keys.append(key)
+        merged.setdefault(target, []).extend(members)
+    return merged
+
+
+def _similar_person_first_name_key(left: str, right: str) -> bool:
+    if left == right:
+        return True
+    if abs(len(left) - len(right)) > 1:
+        return False
+    return SequenceMatcher(a=left, b=right).ratio() >= 0.8
+
+
 def _normalize_person_first_name_key(first_name: str, *, masculine_hint: bool) -> str:
     lowered = first_name.casefold()
     if masculine_hint:
@@ -303,6 +423,9 @@ def _surname_variants(surname: str) -> dict[str, str]:
         variants["surname_genitive_ski"] = f"{surname}ego"
         variants["surname_dative_ski"] = f"{surname}emu"
         variants["surname_instrumental_ski"] = f"{stem}im"
+        variants["surname_genitive_ski_short"] = f"{stem}ego"
+    elif lowered.endswith("ec"):
+        variants["surname_genitive_ec"] = f"{surname[:-2]}ca"
     return variants
 
 

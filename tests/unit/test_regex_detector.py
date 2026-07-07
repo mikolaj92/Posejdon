@@ -390,6 +390,32 @@ def test_regex_detector_finds_polish_compliance_identifiers(tmp_path) -> None:
     }.issubset(entity_types)
 
 
+
+def test_regex_detector_does_not_duplicate_labeled_regon_as_phone(tmp_path) -> None:
+    db_path = tmp_path / "regex_catalog.sqlite3"
+    detector = RegexDetector(
+        allowed_entity_types={"REGON", "PHONE"},
+        catalog_path=str(db_path),
+    )
+
+    entity_types = {entity.entity_type for entity in detector.detect("REGON: 192598184")}
+
+    assert "REGON" in entity_types
+    assert "PHONE" not in entity_types
+
+
+def test_regex_detector_does_not_duplicate_passport_as_document_number(tmp_path) -> None:
+    db_path = tmp_path / "regex_catalog.sqlite3"
+    detector = RegexDetector(
+        allowed_entity_types={"PASSPORT_NUMBER", "DOCUMENT_NUMBER"},
+        catalog_path=str(db_path),
+    )
+
+    entity_types = {entity.entity_type for entity in detector.detect("Paszport nr AB1234567")}
+
+    assert "PASSPORT_NUMBER" in entity_types
+    assert "DOCUMENT_NUMBER" not in entity_types
+
 def test_regex_detector_avoids_public_form_false_positives(tmp_path) -> None:
     db_path = tmp_path / "regex_catalog.sqlite3"
     detector = RegexDetector(
@@ -415,3 +441,45 @@ def test_regex_detector_avoids_public_form_false_positives(tmp_path) -> None:
     )
 
     assert entities == []
+
+
+def test_regex_detector_redacts_labeled_identifiers_without_valid_checksum() -> None:
+    entities = RegexDetector(allowed_entity_types={"NIP", "REGON"}).detect(
+        "wpisany do CEIDG, NIP 8981234567, REGON 123456789,"
+    )
+
+    by_type = {entity.entity_type: entity.raw_text for entity in entities}
+    assert by_type["NIP"] == "NIP 8981234567"
+    assert by_type["REGON"] == "REGON 123456789"
+
+
+def test_regex_detector_finds_split_id_card_series_and_number() -> None:
+    entities = RegexDetector(allowed_entity_types={"ID_CARD_NUMBER"}).detect(
+        "legitymującą się dowodem osobistym seria ABC nr 123456,"
+    )
+
+    assert [entity.raw_text for entity in entities] == ["ABC nr 123456"]
+
+
+def test_regex_detector_flags_quoted_brand_name_as_org() -> None:
+    entities = RegexDetector(allowed_entity_types={"ORG"}).detect(
+        "Firma „TechNova” zawarła umowę."
+    )
+
+    assert [entity.raw_text for entity in entities] == ["TechNova"]
+
+
+def test_regex_detector_ignores_quoted_common_words() -> None:
+    entities = RegexDetector(allowed_entity_types={"ORG"}).detect(
+        "zwany dalej „Pracodawcą”, umowa „na czas nieokreślony” oraz „Umowa”."
+    )
+
+    assert entities == []
+
+
+def test_regex_detector_masks_declined_first_name_with_surname() -> None:
+    entities = RegexDetector(allowed_entity_types={"PERSON"}).detect(
+        "Panią Anną Nowak, zamieszkałą we Wrocławiu,"
+    )
+
+    assert any(entity.raw_text == "Anną Nowak" for entity in entities)

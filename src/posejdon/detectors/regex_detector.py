@@ -57,6 +57,14 @@ class RegexDetector:
                     text, start=match.start(group), end=match.end(group)
                 ):
                     continue
+                if rule.entity_type == "PHONE" and self._is_labeled_regon_candidate(
+                    text, start=match.start(group)
+                ):
+                    continue
+                if rule.entity_type == "DOCUMENT_NUMBER" and self._has_specific_document_label(
+                    raw_text
+                ):
+                    continue
                 start_offset = match.start(group)
                 end_offset = match.end(group)
                 key = (rule.entity_type, start_offset, end_offset)
@@ -85,6 +93,16 @@ class RegexDetector:
                     )
                 )
         return entities
+
+    @staticmethod
+    def _is_labeled_regon_candidate(text: str, *, start: int) -> bool:
+        prefix = text[max(0, start - 16) : start].casefold()
+        return "regon" in prefix
+
+    @staticmethod
+    def _has_specific_document_label(value: str) -> bool:
+        lowered = value.casefold()
+        return any(label in lowered for label in ("paszport", "passport", "prawo jazdy"))
 
     @staticmethod
     def _is_embedded_card_candidate(text: str, *, start: int, end: int) -> bool:
@@ -195,18 +213,34 @@ class RegexDetector:
                 ]
             )
         if enabled is None or "ORG" in enabled:
-            rules.append(
-                RegexRule(
-                    entity_type="ORG",
-                    pattern_text=(
-                        r"\b[A-ZŁŚŻŹĆŃÓ][\w&.\-]+(?:\s+[A-ZŁŚŻŹĆŃÓ][\w&.\-]+){0,6}\s+"
-                        r"(?:S\.A\.|Spółka\s+Akcyjna|sp\.\s*z\s*o\.o\.)"
+            rules.extend(
+                [
+                    RegexRule(
+                        entity_type="ORG",
+                        pattern_text=(
+                            r"\b[A-ZŁŚŻŹĆŃÓ][\w&.\-]+(?:\s+[A-ZŁŚŻŹĆŃÓ][\w&.\-]+){0,6}\s+"
+                            r"(?:S\.A\.|Spółka\s+Akcyjna|sp\.\s*z\s*o\.o\.)"
+                        ),
+                        normalizer_name="identity",
+                        validator_name="always_true",
+                        confidence=0.92,
+                        context_required=True,
                     ),
-                    normalizer_name="identity",
-                    validator_name="always_true",
-                    confidence=0.92,
-                    context_required=True,
-                )
+                    # Brand names in quotes (e.g. „TechNova"). Gated on an internal
+                    # capital so quoted common words ("Umowa", "Pracodawcą") and
+                    # defined-term labels stay untouched.
+                    RegexRule(
+                        entity_type="ORG",
+                        pattern_text=(
+                            r"[„\"“](?P<entity>(?-i:[A-ZŁŚŻŹĆŃÓ][a-ząćęłńóśźż]+"
+                            r"[A-ZŁŚŻŹĆŃÓ][A-Za-ząćęłńóśźż0-9]*))[”\"“]"
+                        ),
+                        normalizer_name="identity",
+                        validator_name="always_true",
+                        confidence=0.85,
+                        context_required=False,
+                    ),
+                ]
             )
         if enabled is None or "CITY" in enabled:
             rules.extend(
@@ -243,6 +277,47 @@ class RegexDetector:
                     normalizer_name="identity",
                     validator_name="always_true",
                     confidence=0.99,
+                    context_required=True,
+                )
+            )
+        # Explicitly labeled identifiers are redacted even when the checksum does
+        # not validate: a value written after "NIP"/"REGON" is meant as one, and
+        # a wrong (or fabricated) checksum must not leak it.
+        if enabled is None or "NIP" in enabled:
+            rules.append(
+                RegexRule(
+                    entity_type="NIP",
+                    pattern_text=r"\bNIP[:\s-]*\d{3}-?\d{3}-?\d{2}-?\d{2}\b",
+                    normalizer_name="identity",
+                    validator_name="always_true",
+                    confidence=0.99,
+                    context_required=True,
+                )
+            )
+        if enabled is None or "REGON" in enabled:
+            rules.append(
+                RegexRule(
+                    entity_type="REGON",
+                    pattern_text=r"\bREGON[:\s-]*\d{9}(?:\d{5})?\b",
+                    normalizer_name="identity",
+                    validator_name="always_true",
+                    confidence=0.985,
+                    context_required=True,
+                )
+            )
+        # Polish ID card written as split series + number ("seria ABC nr 123456"),
+        # which the contiguous DOCUMENT_NUMBER rules miss.
+        if enabled is None or "ID_CARD_NUMBER" in enabled:
+            rules.append(
+                RegexRule(
+                    entity_type="ID_CARD_NUMBER",
+                    pattern_text=(
+                        r"\bseria[:\s-]*(?P<entity>(?-i:[A-Z]{3})\s*"
+                        r"(?:nr\.?|numer)?\s*\d{6})\b"
+                    ),
+                    normalizer_name="identity",
+                    validator_name="always_true",
+                    confidence=0.93,
                     context_required=True,
                 )
             )
