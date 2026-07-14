@@ -287,7 +287,7 @@ class RegexDetector:
             rules.append(
                 RegexRule(
                     entity_type="NIP",
-                    pattern_text=r"\bNIP[:\s-]*\d{3}-?\d{3}-?\d{2}-?\d{2}\b",
+                    pattern_text=r"\bNIP[:\s-]*\d{3}[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}\b",
                     normalizer_name="identity",
                     validator_name="always_true",
                     confidence=0.99,

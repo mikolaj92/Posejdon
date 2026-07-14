@@ -108,11 +108,11 @@ DEFAULT_REGEX_RULES: tuple[tuple[str, str, str, str, float, int, int, str], ...]
         "PDF-truncated labeled phone number",
     ),
     ("PESEL", r"\b\d{11}\b", "digits", "pesel", 0.995, 0, 10, "PESEL"),
-    ("NIP", r"\b\d{3}-?\d{3}-?\d{2}-?\d{2}\b", "digits", "nip", 0.99, 0, 10, "NIP"),
+    ("NIP", r"\b\d{3}[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}\b", "digits", "nip", 0.99, 0, 10, "NIP"),
     ("REGON", r"\b\d{9}(?:\d{5})?\b", "digits", "regon", 0.98, 0, 10, "REGON"),
     (
         "KRS",
-        r"\b(?:KRS|nr\s*KRS)[:\s#/-]*\d{10}\b",
+        r"\b(?:KRS|nr\s*KRS)[:\s#/-]*(?:\d[\s-]*){9}\d\b",
         "digits",
         "krs",
         0.97,
@@ -132,7 +132,7 @@ DEFAULT_REGEX_RULES: tuple[tuple[str, str, str, str, float, int, int, str], ...]
     ),
     (
         "NIP",
-        r"\b(?:NIP|Tax\s*ID|Identyfikator\s*podatkowy)[:\s#/-]*\d{3}-?\d{3}-?\d{2}-?\d{2}\b",
+        r"\b(?:NIP|Tax\s*ID|Identyfikator\s*podatkowy)[:\s#/-]*\d{3}[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}\b",
         "digits",
         "nip",
         0.992,

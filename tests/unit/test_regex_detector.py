@@ -81,6 +81,26 @@ def test_regex_detector_finds_pdf_truncated_labeled_phone_number() -> None:
     assert "+48 \n222 333" in phones
 
 
+def test_regex_detector_finds_spaced_nip_and_labeled_krs_without_partial_phone_matches() -> None:
+    detector = RegexDetector(allowed_entity_types={"NIP", "KRS", "PHONE"})
+    entities = detector.detect("NIP: 856 734 62 15; KRS 0000 1234 56")
+
+    assert {entity.entity_type for entity in entities} == {"NIP", "KRS"}
+    assert {
+        entity.raw_text for entity in entities if entity.entity_type == "KRS"
+    } == {"KRS 0000 1234 56"}
+    assert {
+        entity.raw_text for entity in entities if entity.entity_type == "NIP"
+    } == {"NIP: 856 734 62 15", "856 734 62 15"}
+
+
+def test_regex_detector_finds_spaced_nip_without_label() -> None:
+    detector = RegexDetector(allowed_entity_types={"NIP"})
+    entities = detector.detect("Numer identyfikacyjny: 856 734 62 15")
+
+    assert [entity.raw_text for entity in entities] == ["856 734 62 15"]
+
+
 def test_regex_detector_honors_allowed_entity_filter() -> None:
     detector = RegexDetector(allowed_entity_types={"EMAIL"})
     entities = detector.detect("Email jan.kowalski@example.com oraz PESEL 44051401458.")
