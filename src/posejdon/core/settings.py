@@ -25,7 +25,7 @@ class PosejdonSettings(BaseSettings):
     storage_root: str = DEFAULT_STORAGE_ROOT
     default_policy: str = DEFAULT_POLICY_PROFILE
     enable_llm: bool = True
-    llm_required: bool = False
+    llm_required: bool = True
     llm_provider: str = DEFAULT_LLM_PROVIDER
     llm_model: str = DEFAULT_LLM_MODEL
     llm_profile: LLMProfile | None = None
