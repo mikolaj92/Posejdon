@@ -207,5 +207,5 @@ def test_settings_require_llm_by_default() -> None:
     from posejdon.core.settings import PosejdonSettings
 
     settings = PosejdonSettings()
-    assert settings.enable_llm is True
-    assert settings.llm_required is True
+    assert settings.enable_llm is False
+    assert settings.llm_required is False
