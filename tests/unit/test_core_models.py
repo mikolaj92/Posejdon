@@ -201,3 +201,11 @@ def test_audit_record_carries_optional_prompt_rendering() -> None:
         status=AuditStatus.SUCCEEDED,
     )
     assert minimal.prompt_rendering is None
+
+
+def test_settings_require_llm_by_default() -> None:
+    from posejdon.core.settings import PosejdonSettings
+
+    settings = PosejdonSettings()
+    assert settings.enable_llm is True
+    assert settings.llm_required is True
