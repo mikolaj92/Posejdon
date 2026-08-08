@@ -38,18 +38,21 @@ class MappingVaultStore:
         path = self.root / f"{vault_id}.json"
         raw = json.loads(path.read_text(encoding="utf-8"))
         stored_hmac = raw.pop("vault_hmac", None)
+        if not stored_hmac:
+            raise VaultIntegrityError(
+                f"Vault {vault_id} is missing vault_hmac: unsigned vaults are not accepted."
+            )
         record = MappingVaultRecord.model_validate(raw)
-        if stored_hmac is not None:
-            canonical = json.dumps(raw, sort_keys=True, separators=(",", ":"))
-            computed = hmac.new(
-                self._hmac_key,
-                canonical.encode("utf-8"),
-                hashlib.sha256,
-            ).hexdigest()
-            if not hmac.compare_digest(stored_hmac, computed):
-                raise VaultIntegrityError(
-                    f"Vault {vault_id} HMAC mismatch: vault may have been tampered."
-                )
+        canonical = json.dumps(raw, sort_keys=True, separators=(",", ":"))
+        computed = hmac.new(
+            self._hmac_key,
+            canonical.encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
+        if not hmac.compare_digest(stored_hmac, computed):
+            raise VaultIntegrityError(
+                f"Vault {vault_id} HMAC mismatch: vault may have been tampered."
+            )
         if record.expires_at is not None:
             expires = datetime.fromisoformat(record.expires_at)
             if datetime.now(UTC) > expires:
