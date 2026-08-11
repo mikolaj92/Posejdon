@@ -20,6 +20,8 @@ The host integration contract is:
 - serve Basecoat, HTMX, and Alpine from the app-factory same-origin `/static/platform/...` paths; do not add CDN or vendored chrome assets;
 - install authentication and account/admin UI through `my-auth[fastapi-htmx]` and `my-usermanager`, rather than reimplementing those surfaces in Posejdon;
 - keep HTMX state on the server: mutation routes return server-rendered HTML using the same partials as full-page responses, with stable `id`/`hx-target` pairs and explicit swaps;
+- limit Alpine to component-local presentation state for toggles, menus, dialogs, and disclosures; do not put server data, business rules, or validation in Alpine stores;
+- keep menus and dialogs keyboard accessible, including focus management, Escape handling, and accurate `aria-expanded`/`aria-controls` state;
 - keep links and forms functional without JavaScript where practical; do not return JSON for client-side rendering of product or platform chrome;
 - keep the platform BOM aligned with the app-factory COMPAT row: `app-factory v0.5.19`, `my-auth v0.3.23`, and `my-usermanager v0.4.5` (the current host integration pins).
 
