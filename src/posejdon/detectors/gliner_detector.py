@@ -57,10 +57,7 @@ class GLiNERDetector:
         if self._model is None:
             return []
         prompt_labels = labels or list(_DEFAULT_LABELS)
-        try:
-            predictions = self._model.predict_entities(text, labels=prompt_labels)
-        except Exception:
-            return []
+        predictions = self._model.predict_entities(text, labels=prompt_labels)
 
         entities: list[SensitiveEntity] = []
         for item in predictions:

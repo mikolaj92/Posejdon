@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import contextlib
 import json
 import re
 from collections import defaultdict
@@ -108,10 +107,11 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _detect_entities(anonymizer: TextAnonymizer, text: str):
+    # Detector failures propagate: a benchmark must never report coverage
+    # measured with a silently reduced detector set.
     candidates = []
     for detector in anonymizer.detectors:
-        with contextlib.suppress(Exception):
-            candidates.extend(detector.detect(text))
+        candidates.extend(detector.detect(text))
     return expand_person_mentions(text, anonymizer.fusion.merge(candidates))
 
 
