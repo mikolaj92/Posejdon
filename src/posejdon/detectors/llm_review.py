@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from importlib.util import find_spec
 from typing import Protocol
 
 from pydantic import BaseModel, Field
@@ -149,12 +150,12 @@ class MLXProvider:
         return "mlx"
 
     def runtime_model_id(self) -> str:
-        return self.model_path or "mlx-default"
-
-    def _gateway(self) -> LLMGateway | None:
         if not self.model_path:
-            return None
-        return LLMGateway(provider=MLXInternalProvider(model_path=self.model_path))
+            raise UnsafeProcessingError("MLX model path is not configured")
+        return self.model_path
+
+    def _gateway(self) -> LLMGateway:
+        return LLMGateway(provider=MLXInternalProvider(model_path=self.runtime_model_id()))
 
     def review(
         self,
@@ -164,7 +165,7 @@ class MLXProvider:
         allowed_entity_types: list[str],
     ) -> LLMReviewResponse:
         if not self.model_path:
-            return LLMReviewResponse()
+            raise UnsafeProcessingError("MLX model path is not configured")
         prompt = _PROMPT_REGISTRY.render(
             "posejdon-review-sensitive-entities",
             {
@@ -174,8 +175,6 @@ class MLXProvider:
             },
         )
         gateway = self._gateway()
-        if gateway is None:
-            return LLMReviewResponse()
         request = LLMRequest(
             messages=[LLMMessage(role="user", content=prompt)],
             max_tokens=512,
@@ -194,6 +193,11 @@ class MLXProvider:
             return LLMRuntimeAvailability(
                 warnings=["MLX model path is not configured."],
             )
+        if find_spec("mlx_lm") is None:
+            return LLMRuntimeAvailability(
+                model_available=True,
+                warnings=["MLX runtime dependency 'mlx_lm' is not installed."],
+            )
         return LLMRuntimeAvailability(reachable=True, model_available=True)
 
     def verify_anonymization(
@@ -203,7 +207,7 @@ class MLXProvider:
         allowed_entity_types: list[str],
     ) -> LLMVerificationResponse:
         if not self.model_path:
-            return LLMVerificationResponse(warnings=["MLX model path is not configured."])
+            raise UnsafeProcessingError("MLX model path is not configured")
         segments = [
             {"segment_id": segment.segment_id, "text": segment.text} for segment in output_segments
         ]
@@ -215,8 +219,6 @@ class MLXProvider:
             },
         )
         gateway = self._gateway()
-        if gateway is None:
-            return LLMVerificationResponse(warnings=["MLX model path is not configured."])
         request = LLMRequest(
             messages=[LLMMessage(role="user", content=prompt)],
             max_tokens=512,
@@ -235,5 +237,5 @@ class MLXProvider:
         start = output.find("{")
         end = output.rfind("}")
         if start == -1 or end == -1 or end <= start:
-            return {"suggestions": []}
+            raise ValueError("LLM response did not contain a JSON object")
         return json.loads(output[start : end + 1])
