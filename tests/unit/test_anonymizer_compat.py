@@ -1,7 +1,32 @@
+import pytest
+
 from posejdon import ProcessingMode, ReplacementKind, TextAnonymizer
+from posejdon.domain.entities import SensitiveEntity
 
 
-def test_text_anonymizer_compatibility_anonymizes_pii() -> None:
+def test_enabled_gliner_must_be_available(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "posejdon.anonymizer.GLiNERDetector._load_model",
+        lambda *args: None,
+    )
+
+    with pytest.raises(RuntimeError, match="GLiNER was enabled"):
+        TextAnonymizer(gliner_enabled=True)
+
+
+def test_detector_failure_is_not_silently_downgraded() -> None:
+    class FailingDetector:
+        def detect(self, text: str) -> list[SensitiveEntity]:
+            raise RuntimeError("detector failed")
+
+    anonymizer = TextAnonymizer()
+    anonymizer.detectors.append(FailingDetector())
+
+    with pytest.raises(RuntimeError, match="detector failed"):
+        anonymizer.anonymize("Jan Kowalski")
+
+
+def test_text_anonymizer_anonymizes_pii() -> None:
     anonymizer = TextAnonymizer()
     text = "Jan Kowalski ma PESEL 44051401359 oraz NIP 8567346215"
     result = anonymizer.anonymize(text)

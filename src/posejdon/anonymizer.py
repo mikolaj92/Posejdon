@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import contextlib
 from collections import Counter
 
 from posejdon.core.enums import DocumentKind, PolicyProfileName, ProcessingMode, ReplacementKind
 from posejdon.detectors.fusion import DetectorFusion
 from posejdon.detectors.gliner_detector import GLiNERDetector
 from posejdon.detectors.mention_memory import expand_person_mentions
-from posejdon.detectors.presidio_detector import PresidioDetector
 from posejdon.detectors.regex_detector import RegexDetector
 from posejdon.domain.policies import DEFAULT_POLICY_PROFILES
 from posejdon.planners.replacement_planner import ReplacementPlanner
@@ -38,23 +36,19 @@ class TextAnonymizer:
         self.replacement_style = replacement_style
         self.detectors = []
 
-        # Always include RegexDetector
         self.detectors.append(RegexDetector())
 
-        # Include PresidioDetector if available
-        with contextlib.suppress(Exception):
-            self.detectors.append(PresidioDetector())
-
-        # Include GlinerDetector if requested and available
         if gliner_enabled:
-            with contextlib.suppress(Exception):
-                self.detectors.append(
-                    GLiNERDetector(model_name=gliner_model, threshold=gliner_threshold)
+            gliner = GLiNERDetector(model_name=gliner_model, threshold=gliner_threshold)
+            if not gliner.available:
+                raise RuntimeError(
+                    f"GLiNER was enabled but model {gliner_model!r} could not be loaded"
                 )
+            self.detectors.append(gliner)
 
         self.fusion = DetectorFusion()
 
-        # Compatibility anonymizer stays local-only: regex/optional local detectors, no LLM review.
+        # TextAnonymizer stays local-only: regex/optional GLiNER, no LLM review.
         self.policy = DEFAULT_POLICY_PROFILES[PolicyProfileName.EXTERNAL_IRREVERSIBLE].model_copy(
             update={"llm_review_allowed": False}
         )
@@ -67,8 +61,7 @@ class TextAnonymizer:
         # 1. Run all detectors and gather candidate entities
         candidates = []
         for detector in self.detectors:
-            with contextlib.suppress(Exception):
-                candidates.extend(detector.detect(text))
+            candidates.extend(detector.detect(text))
 
         # 2. Merge candidates to resolve overlaps
         resolved = self.fusion.merge(candidates)

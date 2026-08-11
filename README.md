@@ -53,6 +53,12 @@ from posejdon import TextAnonymizer
 anonymizer = TextAnonymizer(gliner_enabled=True)
 ```
 
+## Fallback policy
+
+Runtime compatibility and degraded-execution paths are recorded in
+[`docs/fallback-inventory.md`](docs/fallback-inventory.md). Explicitly enabled detectors fail
+clearly when unavailable; Posejdon does not silently claim success with reduced detector coverage.
+
 ## Tests
 
 ```bash
