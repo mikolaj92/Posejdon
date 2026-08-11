@@ -54,6 +54,19 @@ def test_htmx_host_contract_is_documented() -> None:
     assert all(requirement in readme for requirement in requirements)
 
 
+def test_alpine_host_contract_is_documented() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    requirements = (
+        "component-local presentation state",
+        "do not put server data, business rules, or validation in Alpine stores",
+        "focus management",
+        "Escape handling",
+        "`aria-expanded`/`aria-controls`",
+    )
+
+    assert all(requirement in readme for requirement in requirements)
+
+
 def test_posejdon_has_no_platform_dependencies() -> None:
     metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     lock = tomllib.loads((ROOT / "uv.lock").read_text(encoding="utf-8"))
