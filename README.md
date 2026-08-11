@@ -19,6 +19,8 @@ The host integration contract is:
 - extend `app_factory/product_shell.html` for authenticated pages; keep domain content in host templates;
 - serve Basecoat, HTMX, and Alpine from the app-factory same-origin `/static/platform/...` paths; do not add CDN or vendored chrome assets;
 - install authentication and account/admin UI through `my-auth[fastapi-htmx]` and `my-usermanager`, rather than reimplementing those surfaces in Posejdon;
+- keep HTMX state on the server: mutation routes return server-rendered HTML using the same partials as full-page responses, with stable `id`/`hx-target` pairs and explicit swaps;
+- keep links and forms functional without JavaScript where practical; do not return JSON for client-side rendering of product or platform chrome;
 - keep the platform BOM aligned with the app-factory COMPAT row: `app-factory v0.5.19`, `my-auth v0.3.23`, and `my-usermanager v0.4.5` (the current host integration pins).
 
 The current FastAPI host is [Anonimizator3000](https://github.com/mikolaj92/anonimizator3000). Product shell, login, account, and admin behavior must be implemented and smoke-tested there. Posejdon remains host-agnostic: adding platform dependencies or an unconsumed `platform_ui` module here would create a second, non-functional integration.

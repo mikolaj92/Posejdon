@@ -41,6 +41,19 @@ def test_dependency_name_extraction_covers_all_supported_declarations() -> None:
     }
 
 
+def test_htmx_host_contract_is_documented() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    requirements = (
+        "mutation routes return server-rendered HTML",
+        "same partials as full-page responses",
+        "stable `id`/`hx-target` pairs",
+        "forms functional without JavaScript",
+        "do not return JSON for client-side rendering",
+    )
+
+    assert all(requirement in readme for requirement in requirements)
+
+
 def test_posejdon_has_no_platform_dependencies() -> None:
     metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     lock = tomllib.loads((ROOT / "uv.lock").read_text(encoding="utf-8"))
