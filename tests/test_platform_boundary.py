@@ -76,3 +76,18 @@ def test_posejdon_has_no_platform_dependencies() -> None:
     found = {_normalized(name) for name in _dependency_names(declared)} & prohibited
 
     assert not found, f"platform dependencies belong in the host application: {sorted(found)}"
+
+
+def test_documented_host_bom_matches_current_compat_row_and_uses_tags() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    expected_tags = {
+        "app-factory": "v0.6.5",
+        "my-auth": "v0.4.2",
+        "my-usermanager": "v0.5.4",
+    }
+
+    for package, tag in expected_tags.items():
+        assert f"github.com/mikolaj92/{package}/releases/tag/{tag}" in readme
+
+    assert "app-factory/blob/v0.6.5/COMPAT.md" in readme
+    assert "v0.5.19" not in readme
