@@ -23,11 +23,21 @@ The host integration contract is:
 - limit Alpine to component-local presentation state for toggles, menus, dialogs, and disclosures; do not put server data, business rules, or validation in Alpine stores;
 - keep menus and dialogs keyboard accessible, including focus management, Escape handling, and accurate `aria-expanded`/`aria-controls` state;
 - keep links and forms functional without JavaScript where practical; do not return JSON for client-side rendering of product or platform chrome;
-- keep the platform BOM aligned with the app-factory COMPAT row: `app-factory v0.5.19`, `my-auth v0.3.23`, and `my-usermanager v0.4.5` (the current host integration pins).
+- keep the platform BOM aligned with the app-factory COMPAT row.
+
+The current host BOM (Anonimizator3000) is the latest COMPAT row:
+
+| Component | Production host tag |
+| --- | --- |
+| app-factory | [`v0.6.5`](https://github.com/mikolaj92/app-factory/releases/tag/v0.6.5) |
+| my-auth | [`v0.4.2`](https://github.com/mikolaj92/my-auth/releases/tag/v0.4.2) |
+| my-usermanager | [`v0.5.4`](https://github.com/mikolaj92/my-usermanager/releases/tag/v0.5.4) |
+
+These are the three tags in the app-factory `v0.6.5` compatibility row. Posejdon has no platform dependency or source entry, so its `pyproject.toml` and `uv.lock` intentionally contain none of these packages; adding host pins here would violate the package boundary.
 
 The current FastAPI host is [Anonimizator3000](https://github.com/mikolaj92/anonimizator3000). Product shell, login, account, and admin behavior must be implemented and smoke-tested there. Posejdon remains host-agnostic: adding platform dependencies or an unconsumed `platform_ui` module here would create a second, non-functional integration.
 
-Compatibility source: [app-factory COMPAT.md](https://github.com/mikolaj92/app-factory/blob/main/COMPAT.md).
+Compatibility source: [app-factory v0.6.5 COMPAT.md](https://github.com/mikolaj92/app-factory/blob/v0.6.5/COMPAT.md).
 
 ## Usage
 
