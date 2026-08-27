@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 
+from posejdon.detectors.regex_support import PERSON_BLOCKED_TOKENS
 from posejdon.domain.entities import SensitiveEntity
 
 # GLiNER only extracts the entity kinds it is prompted with, so callers that hand
@@ -14,6 +15,22 @@ _DEFAULT_LABELS: dict[str, str] = {
     "location": "CITY",
     "address": "ADDRESS",
 }
+# Stems for inflected Polish employment-role nouns. Exact blocked tokens such as
+# "Pracownik" are also rejected via PERSON_BLOCKED_TOKENS; the stems catch forms
+# like "Pracownika" that GLiNER may emit under a non-PERSON label.
+_GENERIC_ROLE_STEMS: frozenset[str] = frozenset(
+    {
+        "pracownik",
+        "pracownic",
+        "klient",
+        "pełnomocnik",
+        "pełnomocnic",
+    }
+)
+_GENERIC_ROLE_INFLECTION_MAX_LEN = 4
+_BLOCKED_ROLE_TOKENS: frozenset[str] = frozenset(
+    token.casefold() for token in PERSON_BLOCKED_TOKENS
+)
 
 
 class GLiNERDetector:
@@ -69,6 +86,8 @@ class GLiNERDetector:
                 continue
             label = str(item["label"])
             entity_type = _DEFAULT_LABELS.get(label, label.upper())
+            if self._is_generic_role_surface(raw):
+                continue
             digest = hashlib.sha1(
                 f"gliner|{label}|{start}|{end}|{raw}".encode(),
                 usedforsecurity=False,
@@ -87,3 +106,20 @@ class GLiNERDetector:
                 )
             )
         return entities
+
+    @staticmethod
+    def _is_generic_role_surface(raw: str) -> bool:
+        surface = raw.strip()
+        if not surface:
+            return False
+        tokens = surface.split()
+        if len(tokens) != 1:
+            return False
+        folded = tokens[0].casefold()
+        if folded in _BLOCKED_ROLE_TOKENS:
+            return True
+        extra = _GENERIC_ROLE_INFLECTION_MAX_LEN
+        return any(
+            folded.startswith(stem) and 0 <= len(folded) - len(stem) <= extra
+            for stem in _GENERIC_ROLE_STEMS
+        )
