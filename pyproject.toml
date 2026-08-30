@@ -1,6 +1,6 @@
 [project]
 name = "posejdon"
-version = "0.1.7"
+version = "0.1.8"
 description = "Polish-first text anonymization package using regex validators and optional GLiNER."
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
@@ -9,8 +9,6 @@ authors = [
   { name = "Posejdon contributors" }
 ]
 dependencies = [
-  "click>=8.0.0",
-  "httpx>=0.28.1",
   "pydantic>=2.11.0",
   "pydantic-settings>=2.8.0",
   "jinja2>=3.1.0",
@@ -28,7 +26,6 @@ spacy = [
 llm = [
   "mlx>=0.31.0",
   "mlx-lm>=0.31.0",
-  "openai>=2.26.0",
 ]
 dev = [
   "pytest>=8.3.0",
