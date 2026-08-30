@@ -6,6 +6,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 
+from posejdon.detectors.gliner_detector import GLiNERDetector
 from posejdon.detectors.regex_support import POLISH_FIRST_NAME_FORMS, build_entity_id
 from posejdon.domain.entities import MentionProvenance, SensitiveEntity
 
@@ -91,6 +92,8 @@ def _cluster_person_entities(entities: list[SensitiveEntity]) -> list[PersonMent
             continue
         if entity.mention_provenance() is not None:
             continue
+        if GLiNERDetector._is_generic_role_surface(entity.raw_text):
+            continue
         parts = _split_canonical_person_name(entity.raw_text)
         if parts is None:
             continue
@@ -127,6 +130,43 @@ def _cluster_person_entities(entities: list[SensitiveEntity]) -> list[PersonMent
                 surname_key=surname_key,
             )
         )
+    reserved_keys = {cluster.first_key for cluster in clusters} | {
+        cluster.surname_key for cluster in clusters
+    }
+    single_grouped: dict[str, list[tuple[SensitiveEntity, str]]] = defaultdict(list)
+    for entity in entities:
+        if entity.entity_type != "PERSON":
+            continue
+        if entity.mention_provenance() is not None:
+            continue
+        surface = _single_token_person_surface(entity.raw_text)
+        if surface is None:
+            continue
+        key = surface.casefold()
+        if key in reserved_keys:
+            continue
+        single_grouped[key].append((entity, surface))
+    for key, members in single_grouped.items():
+        canonical, surface = max(
+            members,
+            key=lambda item: (
+                int(item[0].metadata.get("support_count", "1")),
+                item[0].confidence,
+                -(item[0].start_offset or 0),
+                -(item[0].end_offset or 0),
+            ),
+        )
+        clusters.append(
+            PersonMentionCluster(
+                cluster_id=_person_cluster_id(f"|{key}"),
+                canonical_entity=canonical,
+                members=tuple(item[0] for item in members),
+                first_name="",
+                surname=surface,
+                first_key="",
+                surname_key=key,
+            )
+        )
     return clusters
 
 
@@ -135,12 +175,31 @@ def _person_mention_variants(clusters: list[PersonMentionCluster]) -> list[Perso
     surname_counts: dict[str, int] = defaultdict(int)
     initial_surname_counts: dict[str, int] = defaultdict(int)
     for cluster in clusters:
+        if not cluster.first_name:
+            continue
         first_name_counts[cluster.first_key] += 1
         surname_counts[cluster.surname_key] += 1
         initial_surname_counts[_initial_surname_key(cluster.first_name, cluster.surname)] += 1
 
     variants: list[PersonMentionVariant] = []
     for cluster in clusters:
+        if not cluster.first_name:
+            variants.extend(
+                PersonMentionVariant(
+                    cluster=cluster,
+                    surface=member.raw_text,
+                    rule="person_exact_repeat",
+                )
+                for member in cluster.members
+            )
+            variants.append(
+                PersonMentionVariant(
+                    cluster=cluster,
+                    surface=cluster.surname,
+                    rule="person_exact_repeat",
+                )
+            )
+            continue
         variants.extend(
             PersonMentionVariant(cluster=cluster, surface=member.raw_text, rule="full_name_repeat")
             for member in cluster.members
@@ -235,6 +294,24 @@ def _split_canonical_person_name(text: str) -> tuple[str, str] | None:
     return parts[0], parts[1]
 
 
+def _single_token_person_surface(text: str) -> str | None:
+    cleaned = " ".join(text.split())
+    if not cleaned or " " in cleaned:
+        return None
+    if len(cleaned) < 4 or not cleaned.isalpha():
+        return None
+    if cleaned.isupper() or not cleaned[0].isupper():
+        return None
+    if GLiNERDetector._is_generic_role_surface(cleaned):
+        return None
+    folded = cleaned.casefold()
+    if folded in PERSON_SEED_BLOCKLIST:
+        return None
+    if any(name.casefold() == folded for name in POLISH_FIRST_NAME_FORMS):
+        return None
+    return cleaned
+
+
 def _fuzzy_full_name_mentions(
     text: str,
     entities: list[SensitiveEntity],
@@ -259,7 +336,8 @@ def _fuzzy_full_name_mentions(
         candidates = [
             cluster
             for cluster in clusters
-            if cluster.surname_key == surname_key
+            if cluster.first_name
+            and cluster.surname_key == surname_key
             and _similar_person_first_name_key(cluster.first_key, first_key)
         ]
         if len(candidates) != 1:
