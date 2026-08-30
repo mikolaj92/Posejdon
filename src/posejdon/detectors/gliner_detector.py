@@ -25,6 +25,8 @@ _GENERIC_ROLE_STEMS: frozenset[str] = frozenset(
         "klient",
         "pełnomocnik",
         "pełnomocnic",
+        "administrator",
+        "administratork",
     }
 )
 _GENERIC_ROLE_INFLECTION_MAX_LEN = 4

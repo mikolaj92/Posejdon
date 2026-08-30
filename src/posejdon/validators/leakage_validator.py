@@ -9,12 +9,15 @@ from posejdon_docs.parsers.json_parser import JSONParser
 from posejdon_docs.parsers.xml_parser import XMLParser
 
 from posejdon.core.enums import DocumentKind
+from posejdon.detectors.gliner_detector import GLiNERDetector
+from posejdon.detectors.regex_support import validate_person_full_name
 from posejdon.domain.entities import SensitiveEntity
 from posejdon.domain.reports import LeakageScanResult, SegmentLeakageFinding
 
 
 class LeakageValidator:
     _CONNECTOR_CHARS = r"\w@._-"
+    _RESIDUAL_IDENTIFIER_TYPES = frozenset({"EMAIL", "NIP", "KRS"})
 
     def extract_segments(self, path: str, document_kind: DocumentKind) -> list[ParsedTextSegment]:
         if document_kind == DocumentKind.DOCX:
@@ -116,12 +119,13 @@ class LeakageValidator:
         global_findings: set[str] = set()
         normalized_findings: set[str] = set()
         segmented_findings: list[SegmentLeakageFinding] = []
+        scannable = [entity for entity in entities if self._is_scannable_entity(entity)]
 
         for segment in output_segments:
             matched = sorted(
                 {
                     entity.raw_text
-                    for entity in entities
+                    for entity in scannable
                     if self._contains_surface(segment.text, entity.raw_text)
                     and (entity.segment_id is None or entity.segment_id == segment.segment_id)
                 }
@@ -129,7 +133,7 @@ class LeakageValidator:
             normalized_matched = sorted(
                 {
                     entity.raw_text
-                    for entity in entities
+                    for entity in scannable
                     if self._normalized_contains(segment.text, entity.raw_text)
                     and (entity.segment_id is None or entity.segment_id == segment.segment_id)
                 }
@@ -143,7 +147,7 @@ class LeakageValidator:
                 normalized_findings.update(normalized_matched)
 
         full_text = "\n".join(segment_lookup.values())
-        for entity in entities:
+        for entity in scannable:
             if entity.segment_id is not None:
                 continue
             if self._contains_surface(full_text, entity.raw_text):
@@ -157,6 +161,16 @@ class LeakageValidator:
             findings_by_segment=segmented_findings,
             normalized_findings=sorted(normalized_findings),
         )
+
+    @classmethod
+    def _is_scannable_entity(cls, entity: SensitiveEntity) -> bool:
+        if entity.entity_type in cls._RESIDUAL_IDENTIFIER_TYPES:
+            return True
+        if GLiNERDetector._is_generic_role_surface(entity.raw_text):
+            return False
+        if entity.metadata.get("semantic_conflict") == "true":
+            return validate_person_full_name(entity.raw_text)
+        return True
 
     @classmethod
     def _contains_surface(cls, text: str, surface: str) -> bool:
