@@ -371,6 +371,8 @@ PERSON_BLOCKED_TOKENS: frozenset[str] = frozenset(
         "Liczba",
         "Miejsce",
         "Numer",
+        "Nr",
+        "Page",
         "Pan",
         "Pana",
         "Panem",
@@ -421,6 +423,16 @@ PERSON_BLOCKED_TOKENS: frozenset[str] = frozenset(
         "Zamówienie",
         "Zamówieniu",
         "Zamówień",
+        "Zapłata",
+        "Zapłatami",
+        "Zapłatą",
+        "Zapłatę",
+        "Zapłaty",
+        "Zlecenia",
+        "Zlecenie",
+        "Zleceniem",
+        "Zleceniu",
+        "Zleceń",
     }
 )
 
@@ -581,6 +593,21 @@ def validate_regon(value: str) -> bool:
 def validate_krs(value: str) -> bool:
     digits = normalize_digits(value)
     return len(digits) == 10 and digits.isdigit()
+
+
+_IDENTIFIER_VALIDATORS: dict[str, Callable[[str], bool]] = {
+    "NIP": validate_nip,
+    "PESEL": validate_pesel,
+    "KRS": validate_krs,
+    "REGON": validate_regon,
+}
+
+
+def is_checksum_valid_identifier(entity_type: str, raw: str) -> bool:
+    validator = _IDENTIFIER_VALIDATORS.get(entity_type)
+    if validator is None:
+        return True
+    return bool(validator(raw))
 
 
 def validate_iban(value: str) -> bool:
