@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import hashlib
 
-from posejdon.detectors.regex_support import PERSON_BLOCKED_TOKENS
+from posejdon.detectors.regex_support import (
+    PERSON_BLOCKED_TOKENS,
+    is_checksum_valid_identifier,
+)
 from posejdon.domain.entities import SensitiveEntity
 
 # GLiNER only extracts the entity kinds it is prompted with, so callers that hand
@@ -34,9 +37,13 @@ _GENERIC_ROLE_STEMS: frozenset[str] = frozenset(
         "zamówien",
         "zamówień",
         "poufn",
+        "zapłat",
+        "zlecen",
+        "zleceń",
     }
 )
 _GENERIC_ROLE_INFLECTION_MAX_LEN = 4
+_WRAPPING_PUNCT = "\"'„”«»()[]{}"
 _BLOCKED_ROLE_TOKENS: frozenset[str] = frozenset(
     token.casefold() for token in PERSON_BLOCKED_TOKENS
 )
@@ -97,6 +104,8 @@ class GLiNERDetector:
             entity_type = _DEFAULT_LABELS.get(label, label.upper())
             if self._is_generic_role_surface(raw):
                 continue
+            if not is_checksum_valid_identifier(entity_type, raw):
+                continue
             digest = hashlib.sha1(
                 f"gliner|{label}|{start}|{end}|{raw}".encode(),
                 usedforsecurity=False,
@@ -118,13 +127,17 @@ class GLiNERDetector:
 
     @staticmethod
     def _is_generic_role_surface(raw: str) -> bool:
-        surface = raw.strip()
+        surface = raw.strip().strip(_WRAPPING_PUNCT).strip()
         if not surface:
             return False
         tokens = surface.split()
-        if len(tokens) != 1:
+        return all(GLiNERDetector._is_generic_role_token(token) for token in tokens)
+
+    @staticmethod
+    def _is_generic_role_token(token: str) -> bool:
+        folded = token.strip().strip(_WRAPPING_PUNCT).casefold()
+        if not folded:
             return False
-        folded = tokens[0].casefold()
         if folded in _BLOCKED_ROLE_TOKENS:
             return True
         extra = _GENERIC_ROLE_INFLECTION_MAX_LEN

@@ -74,9 +74,7 @@ def test_detect_propagates_model_failure():
 
 
 def test_detect_drops_predictions_below_threshold():
-    model = _FakeModel(
-        [{"text": "Anna", "label": "person", "start": 0, "end": 4, "score": 0.3}]
-    )
+    model = _FakeModel([{"text": "Anna", "label": "person", "start": 0, "end": 4, "score": 0.3}])
     detector = _detector_with(model, threshold=0.45)
 
     assert detector.detect("Anna") == []
@@ -248,9 +246,7 @@ def test_gliner_does_not_emit_inflected_contract_role_nouns():
 
     entities = detector.detect(_CONTRACT_ROLE_TEXT)
 
-    role_entities = [
-        entity for entity in entities if entity.raw_text in _CONTRACT_ROLE_SURFACES
-    ]
+    role_entities = [entity for entity in entities if entity.raw_text in _CONTRACT_ROLE_SURFACES]
     name_entities = [entity for entity in entities if entity.raw_text == "Jan Kowalski"]
     assert role_entities == []
     assert [entity.entity_type for entity in name_entities] == ["PERSON"]
@@ -269,7 +265,81 @@ def test_fusion_and_planner_drop_inflected_contract_role_before_replacement():
     assert "Jan Kowalski" in replaced
 
 
+def test_gliner_drops_false_nip_without_checksum():
+    text = "Nr NIP: 1234563218."
+    nr_start = text.index("Nr")
+    nip_start = text.index("1234563218")
+    detector = _detector_with(
+        _FakeModel(
+            [
+                {
+                    "text": "Nr",
+                    "label": "NIP",
+                    "start": nr_start,
+                    "end": nr_start + len("Nr"),
+                    "score": 0.72,
+                },
+                {
+                    "text": "1234563218",
+                    "label": "NIP",
+                    "start": nip_start,
+                    "end": nip_start + len("1234563218"),
+                    "score": 0.91,
+                },
+            ]
+        )
+    )
+
+    entities = detector.detect(text, labels=["NIP"])
+
+    assert [entity.raw_text for entity in entities] == ["1234563218"]
+    assert [entity.entity_type for entity in entities] == ["NIP"]
+
+
+def test_gliner_drops_inflected_payment_and_order_nouns():
+    text = "Zapłaty wynikają ze Zlecenia. „Umowy” potwierdza Jan Kowalski."
+    detector = _detector_with(
+        _FakeModel(
+            [
+                {
+                    "text": "Zapłaty",
+                    "label": "person",
+                    "start": text.index("Zapłaty"),
+                    "end": text.index("Zapłaty") + len("Zapłaty"),
+                    "score": 0.75,
+                },
+                {
+                    "text": "Zlecenia",
+                    "label": "organization",
+                    "start": text.index("Zlecenia"),
+                    "end": text.index("Zlecenia") + len("Zlecenia"),
+                    "score": 0.75,
+                },
+                {
+                    "text": "„Umowy”",
+                    "label": "organization",
+                    "start": text.index("„Umowy”"),
+                    "end": text.index("„Umowy”") + len("„Umowy”"),
+                    "score": 0.75,
+                },
+                {
+                    "text": "Jan Kowalski",
+                    "label": "person",
+                    "start": text.index("Jan Kowalski"),
+                    "end": text.index("Jan Kowalski") + len("Jan Kowalski"),
+                    "score": 0.96,
+                },
+            ]
+        )
+    )
+
+    entities = detector.detect(text)
+
+    assert [entity.raw_text for entity in entities] == ["Jan Kowalski"]
+
+
 def test_gliner_does_not_suppress_surname_sharing_umowa_prefix():
+
     # Stem "umow" would swallow "Umowski"; keep contract-document matching exact.
     text = "Umowski potwierdził odbiór."
     start = text.index("Umowski")

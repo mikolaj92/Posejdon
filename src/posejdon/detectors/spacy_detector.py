@@ -2,15 +2,13 @@ from __future__ import annotations
 
 import hashlib
 
+from posejdon.detectors.gliner_detector import GLiNERDetector
+from posejdon.detectors.regex_support import is_checksum_valid_identifier
 from posejdon.domain.entities import SensitiveEntity
 
 
 class SpacyDetector:
     name = "spacy"
-    _GENERIC_SINGLE_TOKEN_ENTITIES = {
-        "page",
-        "strona",
-    }
 
     def __init__(self, model_name: str = "pl_core_news_sm") -> None:
         self.model_name = model_name
@@ -39,7 +37,10 @@ class SpacyDetector:
             normalized = ent.text.strip()
             if not normalized or not any(char.isalnum() for char in normalized):
                 continue
-            if self._is_generic_single_token_entity(normalized):
+            entity_type = ent.label_.upper()
+            if GLiNERDetector._is_generic_role_surface(normalized):
+                continue
+            if not is_checksum_valid_identifier(entity_type, normalized):
                 continue
             digest = hashlib.sha1(
                 f"spacy|{ent.label_}|{ent.start_char}|{ent.end_char}|{ent.text}".encode(),
@@ -48,7 +49,7 @@ class SpacyDetector:
             entities.append(
                 SensitiveEntity(
                     entity_id=f"ENT_{digest}",
-                    entity_type=ent.label_.upper(),
+                    entity_type=entity_type,
                     raw_text=ent.text,
                     normalized_text=normalized,
                     confidence=0.75,
@@ -59,8 +60,3 @@ class SpacyDetector:
                 )
             )
         return entities
-
-    @classmethod
-    def _is_generic_single_token_entity(cls, text: str) -> bool:
-        normalized = text.casefold().strip()
-        return normalized in cls._GENERIC_SINGLE_TOKEN_ENTITIES and len(normalized.split()) == 1

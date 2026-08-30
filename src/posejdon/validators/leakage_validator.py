@@ -10,7 +10,10 @@ from posejdon_docs.parsers.xml_parser import XMLParser
 
 from posejdon.core.enums import DocumentKind
 from posejdon.detectors.gliner_detector import GLiNERDetector
-from posejdon.detectors.regex_support import validate_person_full_name
+from posejdon.detectors.regex_support import (
+    is_checksum_valid_identifier,
+    validate_person_full_name,
+)
 from posejdon.domain.entities import SensitiveEntity
 from posejdon.domain.reports import LeakageScanResult, SegmentLeakageFinding
 
@@ -165,7 +168,7 @@ class LeakageValidator:
     @classmethod
     def _is_scannable_entity(cls, entity: SensitiveEntity) -> bool:
         if entity.entity_type in cls._RESIDUAL_IDENTIFIER_TYPES:
-            return True
+            return is_checksum_valid_identifier(entity.entity_type, entity.raw_text)
         if GLiNERDetector._is_generic_role_surface(entity.raw_text):
             return False
         if entity.metadata.get("semantic_conflict") == "true":

@@ -4,6 +4,7 @@ import sys
 import types
 from dataclasses import dataclass
 
+
 class _FitzStub(types.ModuleType):
     attempted_paths: list[str] = []
 
@@ -173,6 +174,55 @@ def test_leakage_validator_ignores_unmatched_inflected_contract_role_nouns(tmp_p
     assert result.findings == []
     assert result.normalized_findings == []
     assert result.findings_by_segment == []
+
+
+def test_leakage_validator_ignores_false_nip_without_checksum(tmp_path) -> None:
+    result = _scan(
+        tmp_path,
+        "Nr NIP: 1234563218.",
+        [
+            _entity(
+                entity_id="false-nip",
+                entity_type="NIP",
+                raw_text="Nr",
+                normalized_text="nr",
+                source_detector="gliner",
+                confidence=0.72,
+            )
+        ],
+    )
+
+    assert result.leaked_values_detected is False
+    assert result.findings == []
+    assert result.normalized_findings == []
+
+
+def test_leakage_validator_ignores_unmatched_payment_and_order_nouns(tmp_path) -> None:
+    result = _scan(
+        tmp_path,
+        "Zapłaty wynikają ze Zlecenia.",
+        [
+            _entity(
+                entity_id="pay-1",
+                raw_text="Zapłaty",
+                normalized_text="zapłaty",
+                source_detector="spacy",
+                confidence=0.75,
+            ),
+            _entity(
+                entity_id="order-1",
+                entity_type="ORG",
+                raw_text="Zlecenia",
+                normalized_text="zlecenia",
+                source_detector="spacy",
+                confidence=0.75,
+            ),
+        ],
+    )
+
+    assert result.leaked_values_detected is False
+    assert result.findings == []
+    assert result.normalized_findings == []
 
 
 def test_leakage_validator_still_fail_closes_on_residual_email(tmp_path) -> None:
