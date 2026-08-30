@@ -15,9 +15,11 @@ _DEFAULT_LABELS: dict[str, str] = {
     "location": "CITY",
     "address": "ADDRESS",
 }
-# Stems for inflected Polish employment-role nouns. Exact blocked tokens such as
-# "Pracownik" are also rejected via PERSON_BLOCKED_TOKENS; the stems catch forms
-# like "Pracownika" that GLiNER may emit under a non-PERSON label.
+# Stems for inflected Polish role / contract-party / document nouns. Exact blocked
+# tokens such as "Pracownik" are also rejected via PERSON_BLOCKED_TOKENS; the stems
+# catch forms like "Pracownika" or "Zamawiającego" that GLiNER may emit under a
+# non-PERSON label. Keep stems long enough that leftover inflections (max 4 chars)
+# cannot swallow unrelated surnames (do not stem "umow").
 _GENERIC_ROLE_STEMS: frozenset[str] = frozenset(
     {
         "pracownik",
@@ -27,6 +29,11 @@ _GENERIC_ROLE_STEMS: frozenset[str] = frozenset(
         "pełnomocnic",
         "administrator",
         "administratork",
+        "wykonawc",
+        "zamawiając",
+        "zamówien",
+        "zamówień",
+        "poufn",
     }
 )
 _GENERIC_ROLE_INFLECTION_MAX_LEN = 4

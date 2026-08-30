@@ -51,6 +51,19 @@ _LEGAL_ROLE_CONSENT_TEXT = (
     "Administratora danych informuje się o zakresie przetwarzania. "
     "Zgoda dotyczy przetwarzania danych."
 )
+_CONTRACT_ROLE_TEXT = (
+    "Wykonawca świadczy usługi na rzecz Zamawiającego. "
+    "Strony zawierają Umowy w zakresie Zamówienia. "
+    "Poufne informacje pozostają u stron."
+)
+_CONTRACT_ROLE_SURFACES = (
+    "Wykonawca",
+    "Zamawiającego",
+    "Strony",
+    "Umowy",
+    "Zamówienia",
+    "Poufne",
+)
 
 
 def _entity(**kwargs) -> SensitiveEntity:
@@ -130,6 +143,29 @@ def test_leakage_validator_ignores_unmatched_legal_role_common_noun(tmp_path) ->
                 confidence=0.62,
                 source_detector="spacy",
             ),
+        ],
+    )
+
+    assert result.leaked_values_detected is False
+    assert result.findings == []
+    assert result.normalized_findings == []
+    assert result.findings_by_segment == []
+
+
+def test_leakage_validator_ignores_unmatched_inflected_contract_role_nouns(tmp_path) -> None:
+    result = _scan(
+        tmp_path,
+        _CONTRACT_ROLE_TEXT,
+        [
+            _entity(
+                entity_id=f"role-{index}",
+                entity_type="PERSON" if surface != "Zamawiającego" else "ORG",
+                raw_text=surface,
+                normalized_text=surface.casefold(),
+                confidence=0.67,
+                source_detector="gliner",
+            )
+            for index, surface in enumerate(_CONTRACT_ROLE_SURFACES, start=1)
         ],
     )
 
