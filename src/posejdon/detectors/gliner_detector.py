@@ -40,6 +40,8 @@ _GENERIC_ROLE_STEMS: frozenset[str] = frozenset(
         "zapłat",
         "zlecen",
         "zleceń",
+        "podmiot",
+        "powiązan",
     }
 )
 _GENERIC_ROLE_INFLECTION_MAX_LEN = 4

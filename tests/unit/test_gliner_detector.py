@@ -416,3 +416,101 @@ def test_live_gliner_model_still_scores_pracownik_above_threshold_then_drops_it(
     assert "Jan Kowalski" in {entity.raw_text for entity in fused}
     assert "Pracownik" not in replaced
     assert "Jan Kowalski" in replaced
+
+
+def test_gliner_does_not_emit_related_party_legal_phrase_as_person():
+    text = "Podmiot Powiązany przekazuje dane. Jan Kowalski podpisuje."
+    start = text.index("Podmiot Powiązany")
+    jan = text.index("Jan Kowalski")
+    detector = _detector_with(
+        _FakeModel(
+            [
+                {
+                    "text": "Podmiot Powiązany",
+                    "label": "person",
+                    "start": start,
+                    "end": start + len("Podmiot Powiązany"),
+                    "score": 0.81,
+                },
+                {
+                    "text": "Jan Kowalski",
+                    "label": "person",
+                    "start": jan,
+                    "end": jan + len("Jan Kowalski"),
+                    "score": 0.96,
+                },
+            ]
+        )
+    )
+
+    entities = detector.detect(text)
+
+    assert [entity.raw_text for entity in entities] == ["Jan Kowalski"]
+
+
+def test_mention_memory_expands_unique_title_case_single_token_person():
+    text = "Axos podpisuje. Druga strona to Axos i RODO."
+    start = text.index("Axos")
+    entities = [
+        SensitiveEntity(
+            entity_id="person-1",
+            entity_type="PERSON",
+            raw_text="Axos",
+            normalized_text="Axos",
+            confidence=0.75,
+            source_detector="spacy",
+            start_offset=start,
+            end_offset=start + 4,
+        )
+    ]
+
+    expanded = expand_person_mentions(text, entities)
+    derived = [entity for entity in expanded if entity.source_detector == "mention_memory"]
+
+    assert [entity.raw_text for entity in derived] == ["Axos"]
+    assert derived[0].start_offset == text.index("Axos", start + 4)
+    assert derived[0].mention_provenance().mention_rule == "person_exact_repeat"
+    assert "RODO" not in {entity.raw_text for entity in derived}
+
+
+def test_mention_memory_does_not_expand_first_name_form_as_single_token_person():
+    text = "Anna podpisuje. Druga strona to Anna."
+    start = text.index("Anna")
+    entities = [
+        SensitiveEntity(
+            entity_id="person-1",
+            entity_type="PERSON",
+            raw_text="Anna",
+            normalized_text="Anna",
+            confidence=0.91,
+            source_detector="spacy",
+            start_offset=start,
+            end_offset=start + 4,
+        )
+    ]
+
+    expanded = expand_person_mentions(text, entities)
+
+    assert [entity for entity in expanded if entity.source_detector == "mention_memory"] == []
+
+
+def test_mention_memory_does_not_expand_related_party_legal_phrase():
+    text = "Podmiot Powiązany przekazuje dane. Drugi Podmiot Powiązany."
+    start = text.index("Podmiot Powiązany")
+    entities = [
+        SensitiveEntity(
+            entity_id="person-1",
+            entity_type="PERSON",
+            raw_text="Podmiot Powiązany",
+            normalized_text="Podmiot Powiązany",
+            confidence=0.81,
+            source_detector="spacy",
+            start_offset=start,
+            end_offset=start + len("Podmiot Powiązany"),
+        )
+    ]
+
+    expanded = expand_person_mentions(text, entities)
+
+    assert [entity for entity in expanded if entity.source_detector == "mention_memory"] == []
+    assert [entity.raw_text for entity in expanded] == ["Podmiot Powiązany"]

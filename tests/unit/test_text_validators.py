@@ -327,3 +327,23 @@ def test_structural_validator_accepts_readable_text_files_and_reports_text_check
     assert "text_opened" in result.structure_checks
     assert not any(check.startswith("pdf_") for check in result.structure_checks)
     assert _fitz_stub.attempted_paths == []
+
+
+def test_leakage_validator_ignores_related_party_legal_phrase(tmp_path) -> None:
+    result = _scan(
+        tmp_path,
+        "Podmiot Powiązany przekazuje dane podmiotowi powiązanemu.",
+        [
+            _entity(
+                entity_id="related-1",
+                raw_text="Podmiot Powiązany",
+                normalized_text="podmiot powiązany",
+                source_detector="spacy",
+                confidence=0.75,
+            )
+        ],
+    )
+
+    assert result.leaked_values_detected is False
+    assert result.findings == []
+    assert result.normalized_findings == []
