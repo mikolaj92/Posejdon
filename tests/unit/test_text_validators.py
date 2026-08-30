@@ -48,6 +48,7 @@ from posejdon.domain.entities import SensitiveEntity
 
 _LEGAL_ROLE_CONSENT_TEXT = (
     "Pełnomocnik składa oświadczenie w imieniu Pracownika. "
+    "Administratora danych informuje się o zakresie przetwarzania. "
     "Zgoda dotyczy przetwarzania danych."
 )
 
@@ -121,6 +122,13 @@ def test_leakage_validator_ignores_unmatched_legal_role_common_noun(tmp_path) ->
                     "semantic_conflict": "true",
                     "conflicting_entity_types": "PERSON",
                 },
+            ),
+            _entity(
+                entity_id="role-3",
+                raw_text="Administratora",
+                normalized_text="administratora",
+                confidence=0.62,
+                source_detector="spacy",
             ),
         ],
     )

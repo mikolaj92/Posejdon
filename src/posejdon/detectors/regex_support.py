@@ -355,6 +355,8 @@ COMMON_POLISH_SURNAMES: frozenset[str] = frozenset(
 PERSON_BLOCKED_TOKENS: frozenset[str] = frozenset(
     {
         "Adres",
+        "Administrator",
+        "Administratora",
         "Bankowy",
         "Charakter",
         "Dane",

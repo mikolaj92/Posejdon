@@ -84,7 +84,8 @@ def test_detect_drops_predictions_below_threshold():
 
 _EMPLOYMENT_TEXT = (
     "Pracownik wykonuje obowiązki określone w umowie o pracę. "
-    "Jan Kowalski podpisał umowę w imieniu Pracownika."
+    "Jan Kowalski podpisał umowę w imieniu Pracownika. "
+    "Administratora danych informuje się o zakresie przetwarzania."
 )
 # Runtime evidence from Posejdon v0.1.2: solitary GLiNER person at 0.672.
 _GLINER_ROLE_SCORE = 0.6721977591514587
@@ -96,6 +97,7 @@ def _employment_gliner_predictions() -> list[dict]:
     pracownik = _EMPLOYMENT_TEXT.index("Pracownik")
     jan = _EMPLOYMENT_TEXT.index("Jan Kowalski")
     pracownika = _EMPLOYMENT_TEXT.index("Pracownika")
+    administratora = _EMPLOYMENT_TEXT.index("Administratora")
     return [
         {
             "text": "Pracownik",
@@ -117,6 +119,13 @@ def _employment_gliner_predictions() -> list[dict]:
             "start": pracownika,
             "end": pracownika + len("Pracownika"),
             "score": _GLINER_ROLE_GENITIVE_SCORE,
+        },
+        {
+            "text": "Administratora",
+            "label": "person",
+            "start": administratora,
+            "end": administratora + len("Administratora"),
+            "score": 0.62,
         },
     ]
 
@@ -141,7 +150,9 @@ def test_gliner_does_not_emit_generic_polish_role_as_person():
     entities = detector.detect(_EMPLOYMENT_TEXT)
 
     role_entities = [
-        entity for entity in entities if entity.raw_text in {"Pracownik", "Pracownika"}
+        entity
+        for entity in entities
+        if entity.raw_text in {"Pracownik", "Pracownika", "Administratora"}
     ]
     name_entities = [entity for entity in entities if entity.raw_text == "Jan Kowalski"]
     assert role_entities == []
@@ -157,9 +168,11 @@ def test_fusion_and_planner_drop_solitary_gliner_role_before_replacement():
     replaced = {replacement.source_text for replacement in plan.replacements}
     assert "Pracownik" not in fused_surfaces
     assert "Pracownika" not in fused_surfaces
+    assert "Administratora" not in fused_surfaces
     assert "Jan Kowalski" in fused_surfaces
     assert "Pracownik" not in replaced
     assert "Pracownika" not in replaced
+    assert "Administratora" not in replaced
     assert "Jan Kowalski" in replaced
     assert all(
         replacement.replacement_text.startswith("[OSOBA_")
@@ -184,6 +197,7 @@ def test_anonymizer_preserves_generic_role_while_replacing_named_person(monkeypa
 
     assert "Pracownik" in result.text
     assert "Pracownika" in result.text
+    assert "Administratora" in result.text
     assert "Jan Kowalski" not in result.text
     assert "[OSOBA_" in result.text
     assert result.findings.get("PERSON", 0) == 1
