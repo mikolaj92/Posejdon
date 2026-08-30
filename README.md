@@ -70,6 +70,11 @@ defaults match that facade: `enable_llm=false`, `llm_required=false`,
 those extras; Argus still requires them with `POSEJDON_REQUIRE_GLINER=true` /
 `POSEJDON_REQUIRE_SPACY=true`.
 
+LLM prompt YAML ships inside the wheel (`posejdon/prompts/`). The registry
+loads it via `importlib.resources`; it does not search CWD. Override the
+search root with `POSEJDON_PROMPT_ROOT` or `PosejdonPromptRegistry(root)`.
+A missing prompt raises `FileNotFoundError`.
+
 ## Fallback policy
 
 Runtime compatibility and degraded-execution paths are recorded in
