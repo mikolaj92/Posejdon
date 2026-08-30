@@ -87,6 +87,19 @@ _EMPLOYMENT_TEXT = (
     "Jan Kowalski podpisał umowę w imieniu Pracownika. "
     "Administratora danych informuje się o zakresie przetwarzania."
 )
+_CONTRACT_ROLE_TEXT = (
+    "Wykonawca świadczy usługi na rzecz Zamawiającego. "
+    "Strony zawierają Umowy w zakresie Zamówienia. "
+    "Poufne informacje pozostają u Jan Kowalski."
+)
+_CONTRACT_ROLE_SURFACES = (
+    "Wykonawca",
+    "Zamawiającego",
+    "Strony",
+    "Umowy",
+    "Zamówienia",
+    "Poufne",
+)
 # Runtime evidence from Posejdon v0.1.2: solitary GLiNER person at 0.672.
 _GLINER_ROLE_SCORE = 0.6721977591514587
 _GLINER_NAME_SCORE = 0.969257
@@ -202,6 +215,81 @@ def test_anonymizer_preserves_generic_role_while_replacing_named_person(monkeypa
     assert "[OSOBA_" in result.text
     assert result.findings.get("PERSON", 0) == 1
     assert "ORG" not in result.findings
+
+
+def _contract_gliner_predictions() -> list[dict]:
+    predictions = []
+    for surface in _CONTRACT_ROLE_SURFACES:
+        start = _CONTRACT_ROLE_TEXT.index(surface)
+        predictions.append(
+            {
+                "text": surface,
+                "label": "person" if surface != "Zamawiającego" else "organization",
+                "start": start,
+                "end": start + len(surface),
+                "score": _GLINER_ROLE_GENITIVE_SCORE,
+            }
+        )
+    jan = _CONTRACT_ROLE_TEXT.index("Jan Kowalski")
+    predictions.append(
+        {
+            "text": "Jan Kowalski",
+            "label": "person",
+            "start": jan,
+            "end": jan + len("Jan Kowalski"),
+            "score": _GLINER_NAME_SCORE,
+        }
+    )
+    return predictions
+
+
+def test_gliner_does_not_emit_inflected_contract_role_nouns():
+    detector = _detector_with(_FakeModel(_contract_gliner_predictions()))
+
+    entities = detector.detect(_CONTRACT_ROLE_TEXT)
+
+    role_entities = [
+        entity for entity in entities if entity.raw_text in _CONTRACT_ROLE_SURFACES
+    ]
+    name_entities = [entity for entity in entities if entity.raw_text == "Jan Kowalski"]
+    assert role_entities == []
+    assert [entity.entity_type for entity in name_entities] == ["PERSON"]
+
+
+def test_fusion_and_planner_drop_inflected_contract_role_before_replacement():
+    gliner = _detector_with(_FakeModel(_contract_gliner_predictions()))
+    fused = _production_path_entities(_CONTRACT_ROLE_TEXT, gliner)
+    plan = _replacement_plan(fused)
+
+    fused_surfaces = {entity.raw_text for entity in fused}
+    replaced = {replacement.source_text for replacement in plan.replacements}
+    assert fused_surfaces.isdisjoint(_CONTRACT_ROLE_SURFACES)
+    assert "Jan Kowalski" in fused_surfaces
+    assert replaced.isdisjoint(_CONTRACT_ROLE_SURFACES)
+    assert "Jan Kowalski" in replaced
+
+
+def test_gliner_does_not_suppress_surname_sharing_umowa_prefix():
+    # Stem "umow" would swallow "Umowski"; keep contract-document matching exact.
+    text = "Umowski potwierdził odbiór."
+    start = text.index("Umowski")
+    detector = _detector_with(
+        _FakeModel(
+            [
+                {
+                    "text": "Umowski",
+                    "label": "person",
+                    "start": start,
+                    "end": start + len("Umowski"),
+                    "score": 0.88,
+                }
+            ]
+        )
+    )
+
+    entities = detector.detect(text)
+
+    assert [entity.raw_text for entity in entities] == ["Umowski"]
 
 
 def test_gliner_does_not_suppress_capitalized_single_token_polish_names():
