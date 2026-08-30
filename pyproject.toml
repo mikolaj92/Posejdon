@@ -1,6 +1,6 @@
 [project]
 name = "posejdon"
-version = "0.1.8"
+version = "0.1.9"
 description = "Polish-first text anonymization package using regex validators and optional GLiNER."
 readme = "README.md"
 requires-python = ">=3.12,<3.14"

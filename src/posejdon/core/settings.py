@@ -24,8 +24,8 @@ class PosejdonSettings(BaseSettings):
     env: str = DEFAULT_ENV
     storage_root: str = DEFAULT_STORAGE_ROOT
     default_policy: str = DEFAULT_POLICY_PROFILE
-    enable_llm: bool = True
-    llm_required: bool = True
+    enable_llm: bool = False
+    llm_required: bool = False
     llm_provider: str = DEFAULT_LLM_PROVIDER
     llm_model: str = DEFAULT_LLM_MODEL
     llm_profile: LLMProfile | None = None
@@ -41,7 +41,7 @@ class PosejdonSettings(BaseSettings):
         le=4096,
     )
     mlx_model_path: str | None = None
-    enable_presidio: bool = True
+    enable_presidio: bool = False
     enable_gliner: bool = True
     enable_spacy: bool = True
     require_presidio: bool = False
