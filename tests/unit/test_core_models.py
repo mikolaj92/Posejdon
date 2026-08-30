@@ -42,7 +42,7 @@ def test_processing_report_supports_required_fields() -> None:
         leakage_scan_results=LeakageScanResult(),
         timing_metadata=TimingMetadata(),
     )
-    assert report.subsystem_version == "0.1.8"
+    assert report.subsystem_version == "0.1.9"
     assert report.validation_results.passed is True
     assert report.coverage_summary.segment_count == 3
     assert report.coverage_summary.mention_memory_seed_count == 1
@@ -203,9 +203,15 @@ def test_audit_record_carries_optional_prompt_rendering() -> None:
     assert minimal.prompt_rendering is None
 
 
-def test_settings_require_llm_by_default() -> None:
+def test_settings_match_library_facade_by_default() -> None:
     from posejdon.core.settings import PosejdonSettings
 
     settings = PosejdonSettings()
-    assert settings.enable_llm is True
-    assert settings.llm_required is True
+    assert settings.enable_llm is False
+    assert settings.llm_required is False
+    assert settings.enable_presidio is False
+    assert settings.require_presidio is False
+    assert settings.enable_gliner is True
+    assert settings.enable_spacy is True
+    assert settings.require_gliner is False
+    assert settings.require_spacy is False

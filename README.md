@@ -63,6 +63,13 @@ from posejdon import TextAnonymizer
 anonymizer = TextAnonymizer(gliner_enabled=True)
 ```
 
+`TextAnonymizer` is regex-only unless you pass `gliner_enabled=True`. It never
+runs LLM review. Host runtime (`PosejdonSettings`, env prefix `POSEJDON_`)
+defaults match that facade: `enable_llm=false`, `llm_required=false`,
+`enable_presidio=false`. GLiNER and spaCy stay enabled for hosts that opt into
+those extras; Argus still requires them with `POSEJDON_REQUIRE_GLINER=true` /
+`POSEJDON_REQUIRE_SPACY=true`.
+
 ## Fallback policy
 
 Runtime compatibility and degraded-execution paths are recorded in
