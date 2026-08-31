@@ -10,6 +10,10 @@ Scope:
 
 No document parsing. No web server. No queue.
 
+Leakage and structural checks take host-supplied text segments or stdlib
+DOCX zip snapshots. DOCX / JSON / XML / PDF parsers live in the host
+(`posejdon-docs` / Docxtor), not in this wheel.
+
 ## Host application boundary
 
 Posejdon is an anonymization library. It intentionally does not provide a web server, FastAPI routes, HTML templates, `product_shell`, authentication/account/admin screens, or frontend assets. This section documents the package boundary only; it does not implement or complete the host UI work tracked in issue #16.

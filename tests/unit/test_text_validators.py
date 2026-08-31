@@ -1,51 +1,12 @@
 from __future__ import annotations
 
+import importlib
 import sys
-import types
-from dataclasses import dataclass
-
-
-class _FitzStub(types.ModuleType):
-    attempted_paths: list[str] = []
-
-    def open(self, path: str):  # pragma: no cover - should never be reached for TEXT
-        self.attempted_paths.append(path)
-        raise AssertionError(f"attempted PDF parsing for {path}")
-
-
-@dataclass
-class _ParsedTextSegment:
-    segment_id: str
-    text: str
-    container_id: str
-    section_id: str
-    start_offset: int
-    end_offset: int
-    page_index: int | None = None
-
-
-_fitz_stub = _FitzStub("fitz")
-sys.modules.setdefault("docx", types.SimpleNamespace(Document=object))
-sys.modules.setdefault("posejdon_docs", types.ModuleType("posejdon_docs"))
-sys.modules.setdefault("posejdon_docs.parsers", types.ModuleType("posejdon_docs.parsers"))
-sys.modules.setdefault(
-    "posejdon_docs.parsers.base",
-    types.SimpleNamespace(ParsedTextSegment=_ParsedTextSegment),
-)
-sys.modules.setdefault(
-    "posejdon_docs.parsers.json_parser",
-    types.SimpleNamespace(JSONParser=object),
-)
-sys.modules.setdefault(
-    "posejdon_docs.parsers.xml_parser",
-    types.SimpleNamespace(XMLParser=object),
-)
-sys.modules.setdefault("fitz", _fitz_stub)
-from posejdon.validators.leakage_validator import LeakageValidator
-from posejdon.validators.structural_validator import StructuralValidator
 
 from posejdon.core.enums import DocumentKind
 from posejdon.domain.entities import SensitiveEntity
+from posejdon.validators.leakage_validator import LeakageValidator
+from posejdon.validators.structural_validator import StructuralValidator
 
 _LEGAL_ROLE_CONSENT_TEXT = (
     "Pełnomocnik składa oświadczenie w imieniu Pracownika. "
@@ -326,7 +287,37 @@ def test_structural_validator_accepts_readable_text_files_and_reports_text_check
     assert result.errors == []
     assert "text_opened" in result.structure_checks
     assert not any(check.startswith("pdf_") for check in result.structure_checks)
-    assert _fitz_stub.attempted_paths == []
+
+
+def test_leakage_validator_refuses_document_paths_without_host_segments(tmp_path) -> None:
+    path = tmp_path / "sample.docx"
+    path.write_bytes(b"pk")
+    try:
+        LeakageValidator().validate(
+            output_path=str(path),
+            document_kind=DocumentKind.DOCX,
+            entities=[],
+        )
+    except ValueError as exc:
+        assert "does not parse" in str(exc)
+    else:
+        raise AssertionError("DOCX leakage must fail closed without host segments")
+
+
+def test_document_parser_modules_are_not_imported_by_library_validators() -> None:
+    for name in (
+        "fitz",
+        "docx",
+        "posejdon_docs",
+        "posejdon_docs.parsers",
+        "posejdon_docs.parsers.base",
+    ):
+        sys.modules.pop(name, None)
+    importlib.reload(importlib.import_module("posejdon.validators.leakage_validator"))
+    importlib.reload(importlib.import_module("posejdon.validators.structural_validator"))
+    importlib.reload(importlib.import_module("posejdon.planners.reinjection_planner"))
+    for name in ("fitz", "docx", "posejdon_docs"):
+        assert name not in sys.modules
 
 
 def test_leakage_validator_ignores_related_party_legal_phrase(tmp_path) -> None:

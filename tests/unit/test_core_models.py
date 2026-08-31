@@ -42,7 +42,7 @@ def test_processing_report_supports_required_fields() -> None:
         leakage_scan_results=LeakageScanResult(),
         timing_metadata=TimingMetadata(),
     )
-    assert report.subsystem_version == "0.1.10"
+    assert report.subsystem_version == "0.1.11"
     assert report.validation_results.passed is True
     assert report.coverage_summary.segment_count == 3
     assert report.coverage_summary.mention_memory_seed_count == 1

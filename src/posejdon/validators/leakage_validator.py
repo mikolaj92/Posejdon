@@ -1,12 +1,8 @@
 from __future__ import annotations
 
 import re
-
-import fitz
-from docx import Document
-from posejdon_docs.parsers.base import ParsedTextSegment
-from posejdon_docs.parsers.json_parser import JSONParser
-from posejdon_docs.parsers.xml_parser import XMLParser
+from collections.abc import Sequence
+from pathlib import Path
 
 from posejdon.core.enums import DocumentKind
 from posejdon.detectors.gliner_detector import GLiNERDetector
@@ -16,115 +12,61 @@ from posejdon.detectors.regex_support import (
 )
 from posejdon.domain.entities import SensitiveEntity
 from posejdon.domain.reports import LeakageScanResult, SegmentLeakageFinding
+from posejdon.domain.segments import TextSegment
 
 
 class LeakageValidator:
     _CONNECTOR_CHARS = r"\w@._-"
     _RESIDUAL_IDENTIFIER_TYPES = frozenset({"EMAIL", "NIP", "KRS"})
 
-    def extract_segments(self, path: str, document_kind: DocumentKind) -> list[ParsedTextSegment]:
-        if document_kind == DocumentKind.DOCX:
-            document = Document(path)
-            segments: list[ParsedTextSegment] = []
+    def extract_text_file_segments(self, path: str) -> list[TextSegment]:
+        """Read a UTF-8 text file. Document formats belong to the host (#54)."""
+        text = Path(path).read_text(encoding="utf-8")
+        if not text:
+            return []
+        return [
+            TextSegment(
+                segment_id="text:0",
+                text=text,
+                container_id="text:0",
+                section_id="text:0",
+                start_offset=0,
+                end_offset=len(text),
+            )
+        ]
 
-            def add_paragraphs(paragraphs, prefix: str) -> None:
-                for index, paragraph in enumerate(paragraphs):
-                    text = paragraph.text
-                    if not text:
-                        continue
-                    segment_id = f"{prefix}:p:{index}"
-                    segments.append(
-                        ParsedTextSegment(
-                            segment_id=segment_id,
-                            text=text,
-                            container_id=segment_id,
-                            section_id=segment_id,
-                            start_offset=0,
-                            end_offset=len(text),
-                        )
-                    )
-
-            add_paragraphs(document.paragraphs, "body")
-            for table_index, table in enumerate(document.tables):
-                for row_index, row in enumerate(table.rows):
-                    for cell_index, cell in enumerate(row.cells):
-                        add_paragraphs(
-                            cell.paragraphs,
-                            f"table:{table_index}:r:{row_index}:c:{cell_index}",
-                        )
-            for section_index, section in enumerate(document.sections):
-                add_paragraphs(section.header.paragraphs, f"header:{section_index}")
-                add_paragraphs(section.footer.paragraphs, f"footer:{section_index}")
-            return segments
-
-        if document_kind == DocumentKind.JSON:
-            return JSONParser().parse(path).text_segments
-
-        if document_kind == DocumentKind.XML:
-            return XMLParser().parse(path).text_segments
-
+    def extract_segments(self, path: str, document_kind: DocumentKind) -> list[TextSegment]:
         if document_kind == DocumentKind.TEXT:
-            with open(path, encoding="utf-8") as file:
-                text = file.read()
-            if not text:
-                return []
-            return [
-                ParsedTextSegment(
-                    segment_id="text:0",
-                    text=text,
-                    container_id="text:0",
-                    section_id="text:0",
-                    start_offset=0,
-                    end_offset=len(text),
-                )
-            ]
-
-        pdf = fitz.open(path)
-        try:
-            segments: list[ParsedTextSegment] = []
-            for page_index in range(pdf.page_count):
-                page = pdf.load_page(page_index)
-                for block_index, block in enumerate(page.get_text("blocks")):
-                    x0, y0, x1, y1, text, *_ = block
-                    clean = text.strip()
-                    if not clean:
-                        continue
-                    segment_id = f"page:{page_index}:block:{block_index}"
-                    segments.append(
-                        ParsedTextSegment(
-                            segment_id=segment_id,
-                            text=clean,
-                            container_id=segment_id,
-                            page_index=page_index,
-                            section_id=segment_id,
-                            start_offset=0,
-                            end_offset=len(clean),
-                        )
-                    )
-            return segments
-        finally:
-            pdf.close()
-
-    def extract_text(self, path: str, document_kind: DocumentKind) -> str:
-        return "\n".join(
-            segment.text for segment in self.extract_segments(path, document_kind)
-        ).strip()
+            return self.extract_text_file_segments(path)
+        raise ValueError(
+            "posejdon leakage: extract_segments no longer parses documents; "
+            "pass host TextSegment values into validate(segments=...)"
+        )
 
     def validate(
         self,
         *,
-        output_path: str,
-        document_kind: DocumentKind,
         entities: list[SensitiveEntity],
+        segments: Sequence[TextSegment] | None = None,
+        output_path: str | None = None,
+        document_kind: DocumentKind | None = None,
     ) -> LeakageScanResult:
-        output_segments = self.extract_segments(output_path, document_kind)
-        segment_lookup = {segment.segment_id: segment.text for segment in output_segments}
+        resolved = list(segments or [])
+        if not resolved:
+            if document_kind == DocumentKind.TEXT and output_path:
+                resolved = self.extract_text_file_segments(output_path)
+            else:
+                raise ValueError(
+                    "posejdon leakage: document segments must be supplied by the host; "
+                    "the library does not parse DOCX, JSON, XML, or PDF"
+                )
+        segment_lookup = {segment.segment_id: segment.text for segment in resolved}
         global_findings: set[str] = set()
         normalized_findings: set[str] = set()
         segmented_findings: list[SegmentLeakageFinding] = []
         scannable = [entity for entity in entities if self._is_scannable_entity(entity)]
 
-        for segment in output_segments:
+        for segment in resolved:
             matched = sorted(
                 {
                     entity.raw_text

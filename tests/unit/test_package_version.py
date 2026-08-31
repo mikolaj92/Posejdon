@@ -30,4 +30,4 @@ def test_package_lock_and_subsystem_version_match() -> None:
     project = _project_version()
     lock = _lock_version()
     assert project == lock == DEFAULT_SUBSYSTEM_VERSION
-    assert project == "0.1.10"
+    assert project == "0.1.11"
