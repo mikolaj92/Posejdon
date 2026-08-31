@@ -38,11 +38,8 @@ class StructuralValidator:
                 self._validate_segments(
                     input_path,
                     output_path,
-                    parser_path="posejdon_docs.parsers.json_parser",
-                    parser_name="JSONParser",
                     opened_check="json_opened",
-                    count_check="json_segment_count_checked",
-                    warning="JSON scalar segment count changed.",
+                    count_check="json_readable",
                     warnings=warnings,
                     checks=checks,
                 )
@@ -50,11 +47,8 @@ class StructuralValidator:
                 self._validate_segments(
                     input_path,
                     output_path,
-                    parser_path="posejdon_docs.parsers.xml_parser",
-                    parser_name="XMLParser",
                     opened_check="xml_opened",
-                    count_check="xml_segment_count_checked",
-                    warning="XML text and attribute segment count changed.",
+                    count_check="xml_readable",
                     warnings=warnings,
                     checks=checks,
                 )
@@ -122,46 +116,24 @@ class StructuralValidator:
         warnings: list[str],
         checks: list[str],
     ) -> None:
-        import fitz
-
-        original_pdf = fitz.open(input_path)
-        output_pdf = fitz.open(output_path)
-        try:
-            checks.append("pdf_opened")
-            if original_pdf.page_count != output_pdf.page_count:
-                errors.append("Page count changed unexpectedly.")
-            checks.append("pdf_page_count_checked")
-            for page_index in range(original_pdf.page_count):
-                original_page = original_pdf.load_page(page_index)
-                output_page = output_pdf.load_page(page_index)
-                if not output_page.get_text("blocks") and original_page.get_text("blocks"):
-                    warnings.append(f"PDF page {page_index} no longer exposes text blocks.")
-            checks.append("pdf_page_block_presence_checked")
-        finally:
-            original_pdf.close()
-            output_pdf.close()
+        errors.append(
+            "PDF structure checks belong to the host; the library does not parse documents"
+        )
+        checks.append("pdf_rejected_in_library")
 
     def _validate_segments(
         self,
         input_path: str,
         output_path: str,
         *,
-        parser_path: str,
-        parser_name: str,
         opened_check: str,
         count_check: str,
-        warning: str,
         warnings: list[str],
         checks: list[str],
     ) -> None:
-        import importlib
-
-        parser_cls = getattr(importlib.import_module(parser_path), parser_name)
-        original = parser_cls().parse(input_path)
-        output = parser_cls().parse(output_path)
+        Path(input_path).read_text(encoding="utf-8")
+        Path(output_path).read_text(encoding="utf-8")
         checks.append(opened_check)
-        if len(original.text_segments) != len(output.text_segments):
-            warnings.append(warning)
         checks.append(count_check)
 
 

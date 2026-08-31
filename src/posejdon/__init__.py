@@ -24,6 +24,7 @@ from posejdon.domain.reports import (
     ReinjectionReport,
     ValidationResult,
 )
+from posejdon.domain.segments import TextSegment
 
 __all__ = [
     "AnonymizationResult",
@@ -47,6 +48,7 @@ __all__ = [
     "ReplacementKind",
     "RestoreArtifactSet",
     "SensitiveEntity",
+    "TextSegment",
     "StorageMode",
     "ValidationResult",
 ]

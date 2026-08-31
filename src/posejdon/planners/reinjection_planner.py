@@ -3,8 +3,6 @@ from __future__ import annotations
 import re
 from difflib import SequenceMatcher
 
-from posejdon_docs.parsers.base import ParsedTextSegment
-
 from posejdon.core.enums import ReinjectionConflictReason
 from posejdon.domain.artifacts import ReinjectionVaultEntry
 from posejdon.domain.reports import (
@@ -13,6 +11,7 @@ from posejdon.domain.reports import (
     ReinjectionDecision,
     ReinjectionPlan,
 )
+from posejdon.domain.segments import TextSegment
 
 PLACEHOLDER_RE = re.compile(r"\[[A-Z_]+_\d+\]")
 
@@ -28,7 +27,7 @@ class ReinjectionPlanner:
         edited_input_path: str,
         source_output_artifact_path: str,
         injector_export: InjectorExport,
-        edited_segments: list[ParsedTextSegment],
+        edited_segments: list[TextSegment],
         vault_entries: list[ReinjectionVaultEntry],
         enable_fuzzy: bool = True,
     ) -> ReinjectionPlan:
@@ -148,7 +147,7 @@ class ReinjectionPlanner:
     def _segment_exact_conflicts(
         self,
         *,
-        segment: ParsedTextSegment,
+        segment: TextSegment,
         template,
         placeholder_to_template_segment: dict[str, str],
         edited_placeholder_locations: dict[str, list[str]],
@@ -339,9 +338,9 @@ class ReinjectionPlanner:
         self,
         *,
         template,
-        edited_segments: list[ParsedTextSegment],
-    ) -> tuple[ParsedTextSegment | None, list[ReinjectionConflict]]:
-        candidates: list[tuple[float, ParsedTextSegment]] = []
+        edited_segments: list[TextSegment],
+    ) -> tuple[TextSegment | None, list[ReinjectionConflict]]:
+        candidates: list[tuple[float, TextSegment]] = []
         template_context = self._locality_key(template.container_id)
         for segment in edited_segments:
             current_refs = PLACEHOLDER_RE.findall(segment.text)
