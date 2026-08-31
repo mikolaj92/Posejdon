@@ -26,7 +26,6 @@ def test_processing_report_supports_required_fields() -> None:
         input_document_type=DocumentKind.DOCX,
         output_document_type=DocumentKind.DOCX,
         detector_summary=DetectorSummary(
-            llm_provider="mlx",
             llm_runtime_status="ready",
             llm_review_executed=True,
             llm_verification_executed=True,
@@ -117,11 +116,14 @@ def test_policy_entity_groups_expand_without_duplicates() -> None:
     assert "core_identity" in ENTITY_GROUPS
 
 
-def test_settings_expose_llm_limits() -> None:
+def test_settings_expose_llm_limits_without_runtime_configuration() -> None:
     settings = PosejdonSettings()
     assert settings.llm_segment_max_chars >= 256
     assert settings.llm_max_review_segments >= 1
     assert settings.llm_max_verification_segments >= 1
+    assert "llm_provider" not in PosejdonSettings.model_fields
+    assert "llm_model" not in PosejdonSettings.model_fields
+    assert not any(name.endswith("model_path") for name in PosejdonSettings.model_fields)
 
 
 def test_sensitive_entity_roundtrips_mention_provenance() -> None:

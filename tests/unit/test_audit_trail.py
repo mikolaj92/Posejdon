@@ -22,7 +22,6 @@ def test_processing_report_supports_required_fields() -> None:
         input_document_type=DocumentKind.DOCX,
         output_document_type=DocumentKind.DOCX,
         detector_summary=DetectorSummary(
-            llm_provider="mlx",
             llm_runtime_status="ready",
             llm_review_executed=True,
             llm_verification_executed=True,

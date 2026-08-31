@@ -1,9 +1,6 @@
 from __future__ import annotations
 
 import json
-import subprocess
-import sys
-from importlib.util import find_spec
 from typing import Protocol
 
 from pydantic import BaseModel, Field
@@ -36,49 +33,12 @@ class LLMResponse(BaseModel):
     content: str
 
 
-class MLXInternalProvider:
-    def __init__(self, model_path: str) -> None:
-        self.model_path = model_path
+class OpenAICompatibleClient(Protocol):
+    """Injected completion client; Posejdon owns neither transport nor runtime config."""
 
     def complete(self, request: LLMRequest) -> LLMResponse:
-        prompt = "\n".join(f"{msg.role}: {msg.content}" for msg in request.messages)
-        try:
-            result = subprocess.run(
-                [
-                    sys.executable,
-                    "-m",
-                    "mlx_lm",
-                    "generate",
-                    "--model",
-                    self.model_path,
-                    "--prompt",
-                    prompt,
-                    "--max-tokens",
-                    str(request.max_tokens or 1024),
-                    "--temp",
-                    str(request.temperature or 0.0),
-                    "--verbose",
-                    "false",
-                ],
-                capture_output=True,
-                check=True,
-                text=True,
-                timeout=request.timeout_seconds,
-            )
-        except subprocess.CalledProcessError as exc:
-            raise RuntimeError(f"MLX generation failed: {exc.stderr}") from exc
-        return LLMResponse(content=result.stdout)
-
-
-class LLMGateway:
-    def __init__(self, provider: MLXInternalProvider) -> None:
-        self.provider = provider
-
-    def complete(self, request: LLMRequest) -> LLMResponse:
-        return self.provider.complete(request)
-
-
-_PROMPT_REGISTRY = PosejdonPromptRegistry()
+        """Complete a chat-style request using OpenAI-compatible semantics."""
+        ...
 
 
 class LLMReviewSuggestion(BaseModel):
@@ -99,28 +59,12 @@ class LLMVerificationResponse(BaseModel):
     verified_segment_ids: list[str] = Field(default_factory=list)
 
 
-class LLMRuntimeAvailability(BaseModel):
-    reachable: bool = False
-    model_available: bool = False
-    warnings: list[str] = Field(default_factory=list)
+class LLMReviewer:
+    """Provider-blind optional review seam backed only by an injected client."""
 
-    @property
-    def ready(self) -> bool:
-        return self.reachable and self.model_available
-
-
-class LocalLLMProvider(Protocol):
-    def probe_availability(self) -> LLMRuntimeAvailability:
-        """Return whether the provider runtime is ready for use."""
-        ...
-
-    def provider_id(self) -> str:
-        """Return the stable provider identifier used for cache keys."""
-        ...
-
-    def runtime_model_id(self) -> str:
-        """Return the concrete runtime model identifier used for requests."""
-        ...
+    def __init__(self, client: OpenAICompatibleClient) -> None:
+        self._client = client
+        self._prompts = PosejdonPromptRegistry()
 
     def review(
         self,
@@ -129,44 +73,7 @@ class LocalLLMProvider(Protocol):
         entities: list[SensitiveEntity],
         allowed_entity_types: list[str],
     ) -> LLMReviewResponse:
-        """Return structured adjudication suggestions."""
-        ...
-
-    def verify_anonymization(
-        self,
-        *,
-        output_segments: list[LLMVerificationWindowEntry],
-        allowed_entity_types: list[str],
-    ) -> LLMVerificationResponse:
-        """Return structured verification findings."""
-        ...
-
-
-class MLXProvider:
-    def __init__(self, model_path: str | None = None) -> None:
-        self.model_path = model_path
-
-    def provider_id(self) -> str:
-        return "mlx"
-
-    def runtime_model_id(self) -> str:
-        if not self.model_path:
-            raise UnsafeProcessingError("MLX model path is not configured")
-        return self.model_path
-
-    def _gateway(self) -> LLMGateway:
-        return LLMGateway(provider=MLXInternalProvider(model_path=self.runtime_model_id()))
-
-    def review(
-        self,
-        *,
-        text_window: str,
-        entities: list[SensitiveEntity],
-        allowed_entity_types: list[str],
-    ) -> LLMReviewResponse:
-        if not self.model_path:
-            raise UnsafeProcessingError("MLX model path is not configured")
-        prompt = _PROMPT_REGISTRY.render(
+        prompt = self._prompts.render(
             "posejdon-review-sensitive-entities",
             {
                 "text_window": text_window[:4000],
@@ -174,31 +81,11 @@ class MLXProvider:
                 "entities": [entity.model_dump() for entity in entities],
             },
         )
-        gateway = self._gateway()
-        request = LLMRequest(
-            messages=[LLMMessage(role="user", content=prompt)],
-            max_tokens=512,
-            temperature=0.0,
-            metadata=LLMRequestMetadata(subsystem="posejdon"),
-        )
         try:
-            response = gateway.complete(request)
-            payload = self._extract_json(response.content)
-            return LLMReviewResponse.model_validate(payload)
+            response = self._client.complete(self._request(prompt))
+            return LLMReviewResponse.model_validate(self._extract_json(response.content))
         except Exception as exc:
-            raise UnsafeProcessingError("MLX entity review failed") from exc
-
-    def probe_availability(self) -> LLMRuntimeAvailability:
-        if not self.model_path:
-            return LLMRuntimeAvailability(
-                warnings=["MLX model path is not configured."],
-            )
-        if find_spec("mlx_lm") is None:
-            return LLMRuntimeAvailability(
-                model_available=True,
-                warnings=["MLX runtime dependency 'mlx_lm' is not installed."],
-            )
-        return LLMRuntimeAvailability(reachable=True, model_available=True)
+            raise UnsafeProcessingError("LLM entity review failed") from exc
 
     def verify_anonymization(
         self,
@@ -206,31 +93,30 @@ class MLXProvider:
         output_segments: list[LLMVerificationWindowEntry],
         allowed_entity_types: list[str],
     ) -> LLMVerificationResponse:
-        if not self.model_path:
-            raise UnsafeProcessingError("MLX model path is not configured")
         segments = [
             {"segment_id": segment.segment_id, "text": segment.text} for segment in output_segments
         ]
-        prompt = _PROMPT_REGISTRY.render(
+        prompt = self._prompts.render(
             "posejdon-verify-document-anonymized-window",
             {
                 "allowed_entity_types": allowed_entity_types,
                 "segments": segments,
             },
         )
-        gateway = self._gateway()
-        request = LLMRequest(
+        try:
+            response = self._client.complete(self._request(prompt))
+            return LLMVerificationResponse.model_validate(self._extract_json(response.content))
+        except Exception as exc:
+            raise UnsafeProcessingError("LLM anonymization verification failed") from exc
+
+    @staticmethod
+    def _request(prompt: str) -> LLMRequest:
+        return LLMRequest(
             messages=[LLMMessage(role="user", content=prompt)],
             max_tokens=512,
             temperature=0.0,
             metadata=LLMRequestMetadata(subsystem="posejdon"),
         )
-        try:
-            response = gateway.complete(request)
-            payload = self._extract_json(response.content)
-            return LLMVerificationResponse.model_validate(payload)
-        except Exception as exc:
-            raise UnsafeProcessingError("MLX anonymization verification failed") from exc
 
     @staticmethod
     def _extract_json(output: str) -> dict:

@@ -9,8 +9,6 @@ from posejdon.core.constants import (
     DEFAULT_LLM_MAX_OUTPUT_TOKENS,
     DEFAULT_LLM_MAX_REVIEW_SEGMENTS,
     DEFAULT_LLM_MAX_VERIFICATION_SEGMENTS,
-    DEFAULT_LLM_MODEL,
-    DEFAULT_LLM_PROVIDER,
     DEFAULT_LLM_SEGMENT_MAX_CHARS,
     DEFAULT_POLICY_PROFILE,
     DEFAULT_STORAGE_ROOT,
@@ -26,8 +24,6 @@ class PosejdonSettings(BaseSettings):
     default_policy: str = DEFAULT_POLICY_PROFILE
     enable_llm: bool = False
     llm_required: bool = False
-    llm_provider: str = DEFAULT_LLM_PROVIDER
-    llm_model: str = DEFAULT_LLM_MODEL
     llm_profile: LLMProfile | None = None
     processing_mode: ProcessingMode | None = None
     debug_continue_on_renderer_failure: bool | None = None
@@ -40,7 +36,6 @@ class PosejdonSettings(BaseSettings):
         ge=1,
         le=4096,
     )
-    mlx_model_path: str | None = None
     enable_presidio: bool = False
     enable_gliner: bool = True
     enable_spacy: bool = True

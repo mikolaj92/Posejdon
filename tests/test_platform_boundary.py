@@ -78,6 +78,21 @@ def test_posejdon_has_no_platform_dependencies() -> None:
     assert not found, f"platform dependencies belong in the host application: {sorted(found)}"
 
 
+def test_posejdon_has_no_bundled_llm_runtime() -> None:
+    metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    production = ROOT / "src" / "posejdon"
+    source = "\n".join(
+        path.read_text(encoding="utf-8") for path in production.rglob("*.py")
+    ).lower()
+
+    dependencies = {_normalized(name) for name in _dependency_names(metadata)}
+    assert "mlx" not in dependencies
+    assert "mlx-lm" not in dependencies
+    assert "mlx_lm" not in source
+    assert "mlxprovider" not in source
+    assert "model_path" not in source
+
+
 def test_documented_host_bom_uses_tags_and_states_latest_compat_row() -> None:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     host_tags = {

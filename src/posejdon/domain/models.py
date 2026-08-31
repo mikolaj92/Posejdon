@@ -35,7 +35,6 @@ class DetectorSummary(BaseModel):
     spacy_enabled: bool = False
     spacy_status: str = "disabled"
     llm_review_enabled: bool = True
-    llm_provider: str | None = None
     llm_profile: str | None = None
     llm_runtime_status: str = "disabled"
     llm_review_executed: bool = False
