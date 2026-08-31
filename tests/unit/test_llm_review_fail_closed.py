@@ -1,56 +1,46 @@
 from __future__ import annotations
 
-import pytest
+from collections.abc import Sequence
 
-from posejdon.core.errors import UnsafeProcessingError
-from posejdon.detectors.llm_review import MLXProvider
-
-
-class _FailingGateway:
-    def complete(self, request):
-        raise RuntimeError("provider failed")
-
-
-def test_missing_model_configuration_fails_closed() -> None:
-    provider = MLXProvider()
-
-    with pytest.raises(UnsafeProcessingError, match="model path is not configured"):
-        provider.runtime_model_id()
-    with pytest.raises(UnsafeProcessingError, match="model path is not configured"):
-        provider.review(text_window="text", entities=[], allowed_entity_types=[])
-    with pytest.raises(UnsafeProcessingError, match="model path is not configured"):
-        provider.verify_anonymization(output_segments=[], allowed_entity_types=[])
+from posejdon.detectors.llm_review import (
+    LLMReviewResponse,
+    LLMRuntimeAvailability,
+    LLMVerificationResponse,
+    LocalLLMProvider,
+)
+from posejdon.domain.entities import SensitiveEntity
+from posejdon.domain.models import LLMVerificationWindowEntry
 
 
-def test_probe_reports_missing_runtime_dependency(monkeypatch: pytest.MonkeyPatch) -> None:
-    provider = MLXProvider(model_path="local-model")
-    monkeypatch.setattr("posejdon.detectors.llm_review.find_spec", lambda name: None)
+class FakeInjectedLLMProvider:
+    def probe_availability(self) -> LLMRuntimeAvailability:
+        return LLMRuntimeAvailability(reachable=True, model_available=True)
 
-    availability = provider.probe_availability()
+    def provider_id(self) -> str:
+        return "fake_provider"
 
-    assert availability.ready is False
-    assert availability.model_available is True
-    assert availability.warnings == ["MLX runtime dependency 'mlx_lm' is not installed."]
+    def runtime_model_id(self) -> str:
+        return "fake_model"
+
+    def review(
+        self,
+        *,
+        text_window: str,
+        entities: Sequence[SensitiveEntity] | list[SensitiveEntity],
+        allowed_entity_types: Sequence[str] | list[str],
+    ) -> LLMReviewResponse:
+        return LLMReviewResponse()
+
+    def verify_anonymization(
+        self,
+        *,
+        output_segments: Sequence[LLMVerificationWindowEntry] | list[LLMVerificationWindowEntry],
+        allowed_entity_types: Sequence[str] | list[str],
+    ) -> LLMVerificationResponse:
+        return LLMVerificationResponse()
 
 
-def test_response_without_json_is_rejected() -> None:
-    with pytest.raises(ValueError, match="did not contain a JSON object"):
-        MLXProvider._extract_json("generation completed without structured output")
-
-
-def test_review_provider_failure_raises_unsafe_processing(monkeypatch: pytest.MonkeyPatch) -> None:
-    provider = MLXProvider(model_path="local-model")
-    monkeypatch.setattr(provider, "_gateway", lambda: _FailingGateway())
-
-    with pytest.raises(UnsafeProcessingError, match="entity review failed"):
-        provider.review(text_window="text", entities=[], allowed_entity_types=[])
-
-
-def test_verification_provider_failure_raises_unsafe_processing(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    provider = MLXProvider(model_path="local-model")
-    monkeypatch.setattr(provider, "_gateway", lambda: _FailingGateway())
-
-    with pytest.raises(UnsafeProcessingError, match="verification failed"):
-        provider.verify_anonymization(output_segments=[], allowed_entity_types=[])
+def test_injected_llm_provider_satisfies_protocol() -> None:
+    provider: LocalLLMProvider = FakeInjectedLLMProvider()
+    assert provider.provider_id() == "fake_provider"
+    assert provider.probe_availability().ready is True

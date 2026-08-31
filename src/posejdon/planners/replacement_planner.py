@@ -89,9 +89,7 @@ class ReplacementPlanner:
                     replacement_text=replacement_text,
                     replacement_kind=strategy.kind,
                     source_text=(
-                        entity.raw_text
-                        if processing_mode == ProcessingMode.REVERSIBLE
-                        else None
+                        entity.raw_text if processing_mode == ProcessingMode.REVERSIBLE else None
                     ),
                     justification=f"Policy {self.policy.name.value} replacement.",
                     confidence=entity.confidence,

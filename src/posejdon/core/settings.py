@@ -40,7 +40,6 @@ class PosejdonSettings(BaseSettings):
         ge=1,
         le=4096,
     )
-    mlx_model_path: str | None = None
     enable_presidio: bool = False
     enable_gliner: bool = True
     enable_spacy: bool = True

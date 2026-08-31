@@ -21,9 +21,7 @@ def test_polish_pii_corpus_benchmark_passes_leakage_gate() -> None:
     assert report["overall"]["recall"] >= report["overall_recall_target"]
     assert report["leakage"]["leaked_values_detected"] is False
     assert report["leakage"]["findings"] == []
-    assert {"PERSON", "BANK_ACCOUNT", "VEHICLE_REGISTRATION"}.issubset(
-        report["entity_types"]
-    )
+    assert {"PERSON", "BANK_ACCOUNT", "VEHICLE_REGISTRATION"}.issubset(report["entity_types"])
 
 
 def test_benchmark_detector_failure_is_not_silently_downgraded() -> None:

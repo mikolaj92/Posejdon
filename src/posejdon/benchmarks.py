@@ -52,9 +52,7 @@ def run_corpus_benchmark(corpus_path: str | Path) -> dict[str, Any]:
         anonymized = anonymizer.anonymize(text).text
         for entity in expected:
             surface = entity["text"]
-            if _contains_surface(anonymized, surface) or _normalized_contains(
-                anonymized, surface
-            ):
+            if _contains_surface(anonymized, surface) or _normalized_contains(anonymized, surface):
                 leakage_findings.append(
                     {
                         "sample_id": sample["id"],
