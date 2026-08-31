@@ -140,8 +140,6 @@ def test_text_anonymizer_removes_polish_sensitive_surfaces(
     assert expected_entity_types.issubset(result.findings)
 
 
-
-
 def test_text_anonymizer_removes_spaced_nip_and_krs_without_leaking_digits() -> None:
     result = TextAnonymizer().anonymize("NIP: 856 734 62 15; KRS 0000 1234 56")
 
@@ -149,6 +147,8 @@ def test_text_anonymizer_removes_spaced_nip_and_krs_without_leaking_digits() -> 
     assert "0000 1234 56" not in result.text
     assert result.findings["NIP"] == 1
     assert result.findings["KRS"] == 1
+
+
 def test_person_rules_do_not_embed_fixture_only_legal_clause() -> None:
     patterns = "\n".join(
         rule.pattern_text for rule in RegexDetector(allowed_entity_types={"PERSON"}).rules

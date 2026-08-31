@@ -86,12 +86,13 @@ def test_regex_detector_finds_spaced_nip_and_labeled_krs_without_partial_phone_m
     entities = detector.detect("NIP: 856 734 62 15; KRS 0000 1234 56")
 
     assert {entity.entity_type for entity in entities} == {"NIP", "KRS"}
-    assert {
-        entity.raw_text for entity in entities if entity.entity_type == "KRS"
-    } == {"KRS 0000 1234 56"}
-    assert {
-        entity.raw_text for entity in entities if entity.entity_type == "NIP"
-    } == {"NIP: 856 734 62 15", "856 734 62 15"}
+    assert {entity.raw_text for entity in entities if entity.entity_type == "KRS"} == {
+        "KRS 0000 1234 56"
+    }
+    assert {entity.raw_text for entity in entities if entity.entity_type == "NIP"} == {
+        "NIP: 856 734 62 15",
+        "856 734 62 15",
+    }
 
 
 def test_regex_detector_finds_spaced_nip_without_label() -> None:
@@ -280,9 +281,7 @@ def test_regex_detector_finds_technical_identifiers_from_contract_context(tmp_pa
         catalog_path=str(db_path),
     )
 
-    entities = detector.detect(
-        "Pojazd KR 7MZ18 i identyfikator host-waw-01. Dostęp z 83.21.144.9."
-    )
+    entities = detector.detect("Pojazd KR 7MZ18 i identyfikator host-waw-01. Dostęp z 83.21.144.9.")
 
     by_type = {entity.entity_type: entity.raw_text for entity in entities}
     assert by_type["VEHICLE_REGISTRATION"] == "KR 7MZ18"
@@ -410,7 +409,6 @@ def test_regex_detector_finds_polish_compliance_identifiers(tmp_path) -> None:
     }.issubset(entity_types)
 
 
-
 def test_regex_detector_does_not_duplicate_labeled_regon_as_phone(tmp_path) -> None:
     db_path = tmp_path / "regex_catalog.sqlite3"
     detector = RegexDetector(
@@ -435,6 +433,7 @@ def test_regex_detector_does_not_duplicate_passport_as_document_number(tmp_path)
 
     assert "PASSPORT_NUMBER" in entity_types
     assert "DOCUMENT_NUMBER" not in entity_types
+
 
 def test_regex_detector_avoids_public_form_false_positives(tmp_path) -> None:
     db_path = tmp_path / "regex_catalog.sqlite3"
@@ -482,9 +481,7 @@ def test_regex_detector_finds_split_id_card_series_and_number() -> None:
 
 
 def test_regex_detector_flags_quoted_brand_name_as_org() -> None:
-    entities = RegexDetector(allowed_entity_types={"ORG"}).detect(
-        "Firma „TechNova” zawarła umowę."
-    )
+    entities = RegexDetector(allowed_entity_types={"ORG"}).detect("Firma „TechNova” zawarła umowę.")
 
     assert [entity.raw_text for entity in entities] == ["TechNova"]
 

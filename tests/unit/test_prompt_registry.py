@@ -88,7 +88,7 @@ def test_missing_prompt_raises(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
 def test_explicit_root_override(tmp_path: Path) -> None:
     yaml_path = tmp_path / "custom.yaml"
     yaml_path.write_text(
-        "prompt_id: custom-override\nversion: \"1.0.0\"\ntemplate: hello\n",
+        'prompt_id: custom-override\nversion: "1.0.0"\ntemplate: hello\n',
         encoding="utf-8",
     )
     registry = PosejdonPromptRegistry(tmp_path)

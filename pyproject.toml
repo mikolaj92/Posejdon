@@ -1,6 +1,6 @@
 [project]
 name = "posejdon"
-version = "0.1.11"
+version = "0.1.12"
 description = "Polish-first text anonymization package using regex validators and optional GLiNER."
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
@@ -16,20 +16,19 @@ dependencies = [
   "regex>=2025.0.0",
 ]
 
+[dependency-groups]
+dev = [
+  "pytest>=8.3.0",
+  "pyright>=1.1.400",
+  "ruff>=0.9.0",
+]
+
 [project.optional-dependencies]
 detectors = [
   "gliner>=0.2.22",
 ]
 spacy = [
   "spacy>=3.8.7",
-]
-llm = [
-  "mlx>=0.31.0",
-  "mlx-lm>=0.31.0",
-]
-dev = [
-  "pytest>=8.3.0",
-  "ruff>=0.9.0",
 ]
 
 [build-system]
@@ -49,3 +48,10 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
+
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+include = ["src", "tests"]
+exclude = ["**/__pycache__"]

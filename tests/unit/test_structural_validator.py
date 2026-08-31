@@ -13,14 +13,9 @@ _REL = "http://schemas.openxmlformats.org/package/2006/relationships"
 _OFFICE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 _PKG = "http://schemas.openxmlformats.org/package/2006/relationships"
 _CORE = f"{_PKG}/metadata/core-properties"
-_APP = (
-    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/"
-    "extended-properties"
-)
+_APP = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties"
 _RELS_TYPE = "application/vnd.openxmlformats-package.relationships+xml"
-_DOC_TYPE = (
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"
-)
+_DOC_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"
 _CORE_NS = "http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
 _APP_NS = "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"
 
@@ -37,26 +32,18 @@ def _document_xml(*, paragraphs: list[str], tables: int = 1, sect_pr: bool = Tru
             '<w:footerReference w:type="default" r:id="rId2"/></w:sectPr>'
         )
     joined = "".join(body)
-    return (
-        f'<w:document xmlns:w="{_W}" xmlns:r="{_OFFICE}">'
-        f"<w:body>{joined}</w:body></w:document>"
-    )
+    return f'<w:document xmlns:w="{_W}" xmlns:r="{_OFFICE}"><w:body>{joined}</w:body></w:document>'
 
 
 def _rels_xml(*, include_office: bool = True, include_app: bool = True) -> str:
     parts = [f'<Relationships xmlns="{_REL}">']
     if include_office:
         parts.append(
-            f'<Relationship Id="rId1" Type="{_OFFICE}/officeDocument" '
-            'Target="word/document.xml"/>'
+            f'<Relationship Id="rId1" Type="{_OFFICE}/officeDocument" Target="word/document.xml"/>'
         )
-    parts.append(
-        f'<Relationship Id="rId2" Type="{_CORE}" Target="docProps/core.xml"/>'
-    )
+    parts.append(f'<Relationship Id="rId2" Type="{_CORE}" Target="docProps/core.xml"/>')
     if include_app:
-        parts.append(
-            f'<Relationship Id="rId3" Type="{_APP}" Target="docProps/app.xml"/>'
-        )
+        parts.append(f'<Relationship Id="rId3" Type="{_APP}" Target="docProps/app.xml"/>')
     parts.append("</Relationships>")
     return "".join(parts)
 
