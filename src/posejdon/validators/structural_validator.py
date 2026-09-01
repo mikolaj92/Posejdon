@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -64,23 +66,9 @@ class StructuralValidator:
             elif document_kind == DocumentKind.PDF:
                 self._validate_pdf(input_path, output_path, errors, warnings, checks)
             elif document_kind == DocumentKind.JSON:
-                self._validate_segments(
-                    input_path,
-                    output_path,
-                    opened_check="json_opened",
-                    count_check="json_readable",
-                    warnings=warnings,
-                    checks=checks,
-                )
+                self._validate_json(input_path, output_path, errors, checks)
             elif document_kind == DocumentKind.XML:
-                self._validate_segments(
-                    input_path,
-                    output_path,
-                    opened_check="xml_opened",
-                    count_check="xml_readable",
-                    warnings=warnings,
-                    checks=checks,
-                )
+                self._validate_xml(input_path, output_path, errors, checks)
             elif document_kind == DocumentKind.TEXT:
                 Path(input_path).read_text(encoding="utf-8")
                 Path(output_path).read_text(encoding="utf-8")
@@ -166,17 +154,78 @@ class StructuralValidator:
         )
         checks.append("pdf_rejected_in_library")
 
-    def _validate_segments(
+    def _validate_json(
         self,
         input_path: str,
         output_path: str,
-        *,
-        opened_check: str,
-        count_check: str,
-        warnings: list[str],
+        errors: list[str],
         checks: list[str],
     ) -> None:
-        Path(input_path).read_text(encoding="utf-8")
-        Path(output_path).read_text(encoding="utf-8")
-        checks.append(opened_check)
-        checks.append(count_check)
+        source = self._load_json(input_path, "source", errors)
+        output = self._load_json(output_path, "output", errors)
+        checks.append("json_syntax_checked")
+        if source is None or output is None:
+            return
+        if self._json_shape(source) != self._json_shape(output):
+            errors.append("JSON structure changed unexpectedly.")
+        checks.append("json_structure_compared")
+
+    @staticmethod
+    def _load_json(path: str, role: str, errors: list[str]) -> object | None:
+        try:
+            return json.loads(Path(path).read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            errors.append(f"{role.capitalize()} JSON is unreadable or invalid.")
+            return None
+
+    @classmethod
+    def _json_shape(cls, value: object) -> object:
+        if isinstance(value, dict):
+            return (
+                "object",
+                tuple(
+                    (str(key), cls._json_shape(value[key]))
+                    for key in sorted(value, key=str)
+                ),
+            )
+        if isinstance(value, list):
+            return ("array", tuple(cls._json_shape(item) for item in value))
+        if value is None:
+            return "null"
+        if isinstance(value, bool):
+            return "boolean"
+        if isinstance(value, (int, float)):
+            return "number"
+        return "string"
+
+    def _validate_xml(
+        self,
+        input_path: str,
+        output_path: str,
+        errors: list[str],
+        checks: list[str],
+    ) -> None:
+        source = self._load_xml(input_path, "source", errors)
+        output = self._load_xml(output_path, "output", errors)
+        checks.append("xml_syntax_checked")
+        if source is None or output is None:
+            return
+        if self._xml_shape(source) != self._xml_shape(output):
+            errors.append("XML structure changed unexpectedly.")
+        checks.append("xml_structure_compared")
+
+    @staticmethod
+    def _load_xml(path: str, role: str, errors: list[str]) -> ET.Element | None:
+        try:
+            return ET.fromstring(Path(path).read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, ET.ParseError):
+            errors.append(f"{role.capitalize()} XML is unreadable or invalid.")
+            return None
+
+    @classmethod
+    def _xml_shape(cls, node: ET.Element) -> object:
+        return (
+            node.tag,
+            tuple(sorted(node.attrib)),
+            tuple(cls._xml_shape(child) for child in node),
+        )
