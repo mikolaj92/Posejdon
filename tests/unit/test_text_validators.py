@@ -338,3 +338,73 @@ def test_leakage_validator_ignores_related_party_legal_phrase(tmp_path) -> None:
     assert result.leaked_values_detected is False
     assert result.findings == []
     assert result.normalized_findings == []
+
+
+def test_structural_validator_accepts_valid_json_with_same_shape(tmp_path) -> None:
+    original = tmp_path / "input.json"
+    output = tmp_path / "output.json"
+    original.write_text('{"person":{"name":"Jan","ids":[1,2]}}', encoding="utf-8")
+    output.write_text('{"person":{"ids":[3,4],"name":"[PERSON]"}}', encoding="utf-8")
+
+    result = StructuralValidator().validate(
+        input_path=str(original), output_path=str(output), document_kind=DocumentKind.JSON
+    )
+
+    assert result.passed is True
+    assert result.structure_checks == ["json_syntax_checked", "json_structure_compared"]
+
+
+def test_structural_validator_rejects_invalid_or_changed_json(tmp_path) -> None:
+    original = tmp_path / "input.json"
+    output = tmp_path / "output.json"
+    original.write_text('{"person":{"name":"Jan"}}', encoding="utf-8")
+    output.write_text("{", encoding="utf-8")
+
+    invalid = StructuralValidator().validate(
+        input_path=str(original), output_path=str(output), document_kind=DocumentKind.JSON
+    )
+    assert invalid.passed is False
+    assert invalid.errors == ["Output JSON is unreadable or invalid."]
+
+    output.write_text('{"person":["Jan"]}', encoding="utf-8")
+    changed = StructuralValidator().validate(
+        input_path=str(original), output_path=str(output), document_kind=DocumentKind.JSON
+    )
+    assert changed.passed is False
+    assert changed.errors == ["JSON structure changed unexpectedly."]
+
+
+def test_structural_validator_accepts_valid_xml_with_same_shape(tmp_path) -> None:
+    original = tmp_path / "input.xml"
+    output = tmp_path / "output.xml"
+    original.write_text('<root id="1"><person><name>Jan</name></person></root>', encoding="utf-8")
+    output.write_text(
+        '<root id="2"><person><name>[PERSON]</name></person></root>', encoding="utf-8"
+    )
+
+    result = StructuralValidator().validate(
+        input_path=str(original), output_path=str(output), document_kind=DocumentKind.XML
+    )
+
+    assert result.passed is True
+    assert result.structure_checks == ["xml_syntax_checked", "xml_structure_compared"]
+
+
+def test_structural_validator_rejects_invalid_or_changed_xml(tmp_path) -> None:
+    original = tmp_path / "input.xml"
+    output = tmp_path / "output.xml"
+    original.write_text("<root><person /></root>", encoding="utf-8")
+    output.write_text("<root>", encoding="utf-8")
+
+    invalid = StructuralValidator().validate(
+        input_path=str(original), output_path=str(output), document_kind=DocumentKind.XML
+    )
+    assert invalid.passed is False
+    assert invalid.errors == ["Output XML is unreadable or invalid."]
+
+    output.write_text("<root><company /></root>", encoding="utf-8")
+    changed = StructuralValidator().validate(
+        input_path=str(original), output_path=str(output), document_kind=DocumentKind.XML
+    )
+    assert changed.passed is False
+    assert changed.errors == ["XML structure changed unexpectedly."]
