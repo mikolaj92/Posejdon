@@ -61,15 +61,32 @@ class ReplacementPlanner:
         processing_mode: ProcessingMode = ProcessingMode.IRREVERSIBLE,
         replacement_style: ReplacementKind | None = None,
     ) -> ReplacementPlan:
-        resolved, conflicts = self.overlap_resolver.resolve(entities)
+        resolved: list[SensitiveEntity] = []
+        conflicts: list[str] = []
+        location_groups: dict[tuple[str | None, int | None, str | None], list[SensitiveEntity]] = {}
+        for entity in entities:
+            location = (entity.segment_id, entity.page_index, entity.section_id)
+            location_groups.setdefault(location, []).append(entity)
+        for location_entities in location_groups.values():
+            location_resolved, location_conflicts = self.overlap_resolver.resolve(location_entities)
+            resolved.extend(location_resolved)
+            conflicts.extend(location_conflicts)
+
         warnings: list[str] = []
         replacements: list[Replacement] = []
         counters: dict[str, int] = defaultdict(int)
         cluster_ordinals = _person_cluster_ordinals(resolved)
+        accepted_person_clusters = {
+            counter_key
+            for entity in resolved
+            if (counter_key := _person_counter_key(entity)) is not None
+            and self.confidence_policy.should_review(entity)
+        }
         strategy = self._strategy(processing_mode, replacement_style)
 
         for entity in resolved:
-            if not self.confidence_policy.should_review(entity):
+            promoted_person_repeat = _person_counter_key(entity) in accepted_person_clusters
+            if not self.confidence_policy.should_review(entity) and not promoted_person_repeat:
                 warnings.append(f"Entity {entity.entity_id} below review threshold skipped.")
                 continue
             if not self.confidence_policy.should_accept(entity):

@@ -158,6 +158,60 @@ def test_explicit_mask_override_uses_fixed_mask_in_irreversible_mode() -> None:
     assert [replacement.source_text for replacement in plan.replacements] == [None, None]
 
 
+def test_person_repeats_share_the_replacement_decision_by_entity_id() -> None:
+    planner = ReplacementPlanner(policy=_policy(ReplacementKind.CATEGORY_PLACEHOLDER))
+    confidences = [0.78, 0.74, 0.67, 0.57, 0.58]
+    entities = [
+        SensitiveEntity(
+            entity_id="person-anna",
+            entity_type="PERSON",
+            raw_text="Anna Nowak",
+            normalized_text="Anna Nowak",
+            confidence=confidence,
+            source_detector="gliner",
+            segment_id=f"body:p:{index}",
+            start_offset=1,
+            end_offset=11,
+        )
+        for index, confidence in enumerate(confidences)
+    ]
+
+    plan = planner.plan(entities=entities, document_kind=DocumentKind.DOCX)
+
+    assert [replacement.entity_id for replacement in plan.replacements] == [
+        "person-anna"
+    ] * 5
+    assert [replacement.write_targets[0].segment_id for replacement in plan.replacements] == [
+        f"body:p:{index}" for index in range(5)
+    ]
+    assert {replacement.replacement_text for replacement in plan.replacements} == {"[OSOBA_1]"}
+
+
+def test_distinct_people_with_the_same_name_do_not_share_replacement_decisions() -> None:
+    planner = ReplacementPlanner(policy=_policy(ReplacementKind.CATEGORY_PLACEHOLDER))
+    entities = [
+        SensitiveEntity(
+            entity_id=entity_id,
+            entity_type="PERSON",
+            raw_text="Anna Nowak",
+            normalized_text="Anna Nowak",
+            confidence=confidence,
+            source_detector="gliner",
+            segment_id=f"body:p:{index}",
+            start_offset=1,
+            end_offset=11,
+        )
+        for index, (entity_id, confidence) in enumerate(
+            [("person-anna-1", 0.78), ("person-anna-2", 0.57)]
+        )
+    ]
+
+    plan = planner.plan(entities=entities, document_kind=DocumentKind.DOCX)
+
+    assert [replacement.entity_id for replacement in plan.replacements] == ["person-anna-1"]
+    assert plan.replacements[0].write_targets[0].segment_id == "body:p:0"
+
+
 def test_explicit_override_cannot_mask_in_reversible_mode() -> None:
     planner = ReplacementPlanner(policy=_policy(ReplacementKind.CATEGORY_PLACEHOLDER))
 
