@@ -137,6 +137,41 @@ def test_leakage_validator_ignores_unmatched_inflected_contract_role_nouns(tmp_p
     assert result.findings_by_segment == []
 
 
+def test_leakage_validator_ignores_exact_osoba_role_inflections(tmp_path) -> None:
+    role_surfaces = (
+        "Osoba",
+        "Osoby",
+        "Osobie",
+        "Osobę",
+        "Osobą",
+        "Osobami",
+        "Osobom",
+        "Osobach",
+        "Osób",
+    )
+    text = " ".join(role_surfaces)
+
+    result = _scan(
+        tmp_path,
+        text,
+        [
+            _entity(
+                entity_id=f"role-{index}",
+                raw_text=surface,
+                normalized_text=surface.casefold(),
+                source_detector="gliner",
+                confidence=0.81,
+            )
+            for index, surface in enumerate(role_surfaces, start=1)
+        ],
+    )
+
+    assert result.leaked_values_detected is False
+    assert result.findings == []
+    assert result.normalized_findings == []
+    assert result.findings_by_segment == []
+
+
 def test_leakage_validator_ignores_false_nip_without_checksum(tmp_path) -> None:
     result = _scan(
         tmp_path,
