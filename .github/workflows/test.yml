@@ -13,5 +13,5 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
-      - run: uv run --extra dev pytest
-      - run: uv run --extra dev ruff check tests/test_platform_boundary.py
+      - run: uv run --group dev pytest
+      - run: uv run --group dev ruff check .
