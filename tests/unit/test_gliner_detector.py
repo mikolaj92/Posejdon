@@ -265,6 +265,35 @@ def test_fusion_and_planner_drop_inflected_contract_role_before_replacement():
     assert "Jan Kowalski" in replaced
 
 
+def test_gliner_does_not_emit_exact_osoba_role_inflections_as_person():
+    role_surfaces = (
+        "Osoba",
+        "Osoby",
+        "Osobie",
+        "Osobę",
+        "Osobą",
+        "Osobami",
+        "Osobom",
+        "Osobach",
+        "Osób",
+    )
+    text = " ".join((*role_surfaces, "Osowski"))
+    predictions = [
+        {
+            "text": surface,
+            "label": "person",
+            "start": text.index(surface),
+            "end": text.index(surface) + len(surface),
+            "score": 0.81,
+        }
+        for surface in (*role_surfaces, "Osowski")
+    ]
+
+    entities = _detector_with(_FakeModel(predictions)).detect(text)
+
+    assert [entity.raw_text for entity in entities] == ["Osowski"]
+
+
 def test_gliner_drops_false_nip_without_checksum():
     text = "Nr NIP: 1234563218."
     nr_start = text.index("Nr")
