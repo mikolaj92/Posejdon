@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.12, <3.14"
 
 [[package]]
@@ -698,7 +698,6 @@ dependencies = [
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "pyyaml" },
-    { name = "regex" },
 ]
 
 [package.optional-dependencies]
@@ -723,7 +722,6 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.11.0" },
     { name = "pydantic-settings", specifier = ">=2.8.0" },
     { name = "pyyaml", specifier = ">=6.0.2" },
-    { name = "regex", specifier = ">=2025.0.0" },
     { name = "spacy", marker = "extra == 'spacy'", specifier = ">=3.8.7" },
 ]
 provides-extras = ["detectors", "spacy"]
