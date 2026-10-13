@@ -38,8 +38,14 @@ class LLMRuntimeAvailability(BaseModel):
 
 
 class LocalLLMProvider(Protocol):
+    """Host-supplied LLM interface; Posejdon provides no runtime or default client.
+
+    Implementations must report unavailability explicitly and propagate request
+    failures, not return empty success responses or switch to another client.
+    """
+
     def probe_availability(self) -> LLMRuntimeAvailability:
-        """Return whether the provider runtime is ready for use."""
+        """Report runtime readiness; unavailable runtimes must not report ready."""
         ...
 
     def provider_id(self) -> str:
@@ -57,7 +63,7 @@ class LocalLLMProvider(Protocol):
         entities: list[SensitiveEntity],
         allowed_entity_types: list[str],
     ) -> LLMReviewResponse:
-        """Return structured adjudication suggestions."""
+        """Return structured adjudication suggestions or raise on request failure."""
         ...
 
     def verify_anonymization(
@@ -66,7 +72,7 @@ class LocalLLMProvider(Protocol):
         output_segments: list[LLMVerificationWindowEntry],
         allowed_entity_types: list[str],
     ) -> LLMVerificationResponse:
-        """Return segment-level leakage verification outcomes."""
+        """Return segment-level verification outcomes or raise on request failure."""
         ...
 
 
