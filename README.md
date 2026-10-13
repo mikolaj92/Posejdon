@@ -88,5 +88,5 @@ clearly when unavailable; Posejdon does not silently claim success with reduced 
 ## Tests
 
 ```bash
-uv run --extra dev pytest
+uv run --group dev pytest
 ```
