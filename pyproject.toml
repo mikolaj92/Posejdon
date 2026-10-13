@@ -9,34 +9,34 @@ authors = [
   { name = "Posejdon contributors" }
 ]
 dependencies = [
-  "pydantic>=2.14.1",
-  "pydantic-settings>=2.15.0",
-  "jinja2>=3.1.6",
-  "pyyaml>=6.0.3",
+  "pydantic>=2.11.0",
+  "pydantic-settings>=2.8.0",
+  "jinja2>=3.1.0",
+  "pyyaml>=6.0.2",
 ]
 
 [dependency-groups]
 dev = [
-  "pytest>=9.1.1",
-  "pyright>=1.1.414",
-  "ruff>=0.17.0",
+  "pytest>=8.3.0",
+  "pyright>=1.1.400",
+  "ruff>=0.9.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-  "pytest>=9.1.1",
-  "pyright>=1.1.414",
-  "ruff>=0.17.0",
+  "pytest>=8.3.0",
+  "pyright>=1.1.400",
+  "ruff>=0.9.0",
 ]
 detectors = [
-  "gliner>=0.2.29",
+  "gliner>=0.2.22",
 ]
 spacy = [
-  "spacy>=3.8.16",
+  "spacy>=3.8.7",
 ]
 
 [build-system]
-requires = ["hatchling>=1.32.4"]
+requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]

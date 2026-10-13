@@ -773,23 +773,23 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "gliner", marker = "extra == 'detectors'", specifier = ">=0.2.29" },
-    { name = "jinja2", specifier = ">=3.1.6" },
-    { name = "pydantic", specifier = ">=2.14.1" },
-    { name = "pydantic-settings", specifier = ">=2.15.0" },
-    { name = "pyright", marker = "extra == 'dev'", specifier = ">=1.1.414" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.1.1" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.17.0" },
-    { name = "spacy", marker = "extra == 'spacy'", specifier = ">=3.8.16" },
+    { name = "gliner", marker = "extra == 'detectors'", specifier = ">=0.2.22" },
+    { name = "jinja2", specifier = ">=3.1.0" },
+    { name = "pydantic", specifier = ">=2.11.0" },
+    { name = "pydantic-settings", specifier = ">=2.8.0" },
+    { name = "pyright", marker = "extra == 'dev'", specifier = ">=1.1.400" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.0" },
+    { name = "pyyaml", specifier = ">=6.0.2" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9.0" },
+    { name = "spacy", marker = "extra == 'spacy'", specifier = ">=3.8.7" },
 ]
 provides-extras = ["dev", "detectors", "spacy"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "pyright", specifier = ">=1.1.414" },
-    { name = "pytest", specifier = ">=9.1.1" },
-    { name = "ruff", specifier = ">=0.17.0" },
+    { name = "pyright", specifier = ">=1.1.400" },
+    { name = "pytest", specifier = ">=8.3.0" },
+    { name = "ruff", specifier = ">=0.9.0" },
 ]
 
 [[package]]

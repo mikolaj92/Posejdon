@@ -107,6 +107,3 @@ clearly when unavailable; Posejdon does not silently claim success with reduced 
 uv run --group dev pytest
 uv run --group dev ruff check .
 ```
-
-The existing `dev` extra remains supported: `uv run --extra dev pytest`.
-It declares the same tool versions as the `dev` dependency group.
