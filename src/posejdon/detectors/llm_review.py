@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from posejdon.domain.entities import SensitiveEntity
 from posejdon.domain.models import LLMVerificationWindowEntry
@@ -10,6 +10,8 @@ from posejdon.domain.reports import SegmentLeakageFinding
 
 
 class LLMReviewSuggestion(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
+
     entity_id: str
     action: str = Field(pattern="^(keep|drop|extend_left|extend_right|relabel)$")
     replacement_entity_type: str | None = None
@@ -17,10 +19,14 @@ class LLMReviewSuggestion(BaseModel):
 
 
 class LLMReviewResponse(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
+
     suggestions: list[LLMReviewSuggestion] = Field(default_factory=list)
 
 
 class LLMVerificationResponse(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
+
     suspected_leaks: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     findings_by_segment: list[SegmentLeakageFinding] = Field(default_factory=list)
@@ -28,6 +34,8 @@ class LLMVerificationResponse(BaseModel):
 
 
 class LLMRuntimeAvailability(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
+
     reachable: bool = False
     model_available: bool = False
     warnings: list[str] = Field(default_factory=list)
@@ -38,10 +46,11 @@ class LLMRuntimeAvailability(BaseModel):
 
 
 class LocalLLMProvider(Protocol):
-    """Host-supplied LLM interface; Posejdon provides no runtime or default client.
+    """Host-owned runtime and transport; Posejdon supplies only the data contract.
 
-    Implementations must report unavailability explicitly and propagate request
-    failures, not return empty success responses or switch to another client.
+    Providers must validate responses and propagate request failures rather than
+    returning empty success responses. Hosts must check readiness before requests
+    and must not silently switch clients when the provider is unavailable.
     """
 
     def probe_availability(self) -> LLMRuntimeAvailability:

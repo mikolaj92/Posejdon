@@ -87,8 +87,9 @@ Hosts that implement LLM review use `LocalLLMProvider` from
 Posejdon supplies structured response models, not a concrete LLM client.
 `TextAnonymizer` does not accept or invoke this provider.
 
-The host owns client construction and invocation. Unavailability must be
-reported explicitly; review and verification failures must raise instead of
+The host owns runtime, transport, client construction, response validation,
+and invocation. It must check provider readiness before requests. Unavailability
+must be reported explicitly; review and verification failures must raise instead of
 returning empty success responses or switching clients. Settings such as
 `llm_provider` and `llm_model` do not construct a client in this package.
 The embedded MLX runtime was removed in issue #65. Do not restore its imports,
