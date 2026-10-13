@@ -90,3 +90,6 @@ clearly when unavailable; Posejdon does not silently claim success with reduced 
 ```bash
 uv run --group dev pytest
 ```
+
+The existing `dev` extra remains supported: `uv run --extra dev pytest`.
+It declares the same tool versions as the `dev` dependency group.
