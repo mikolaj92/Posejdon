@@ -54,16 +54,16 @@ class LocalLLMProvider(Protocol):
     """
 
     def probe_availability(self) -> LLMRuntimeAvailability:
-        """Return whether the provider runtime is ready for use."""
-        ...
+        """Report runtime readiness; unavailable runtimes must not report ready."""
+        raise NotImplementedError("Host provider must implement probe_availability")
 
     def provider_id(self) -> str:
         """Return the stable provider identifier used for cache keys."""
-        ...
+        raise NotImplementedError("Host provider must implement provider_id")
 
     def runtime_model_id(self) -> str:
         """Return the concrete runtime model identifier used for requests."""
-        ...
+        raise NotImplementedError("Host provider must implement runtime_model_id")
 
     def review(
         self,
@@ -72,8 +72,8 @@ class LocalLLMProvider(Protocol):
         entities: list[SensitiveEntity],
         allowed_entity_types: list[str],
     ) -> LLMReviewResponse:
-        """Return structured adjudication suggestions."""
-        ...
+        """Return structured adjudication suggestions or raise on request failure."""
+        raise NotImplementedError("Host provider must implement review")
 
     def verify_anonymization(
         self,
@@ -81,8 +81,8 @@ class LocalLLMProvider(Protocol):
         output_segments: list[LLMVerificationWindowEntry],
         allowed_entity_types: list[str],
     ) -> LLMVerificationResponse:
-        """Return segment-level leakage verification outcomes."""
-        ...
+        """Return segment-level verification outcomes or raise on request failure."""
+        raise NotImplementedError("Host provider must implement verify_anonymization")
 
 
 __all__ = [

@@ -79,6 +79,22 @@ loads it via `importlib.resources`; it does not search CWD. Override the
 search root with `POSEJDON_PROMPT_ROOT` or `PosejdonPromptRegistry(root)`.
 A missing prompt raises `FileNotFoundError`.
 
+## Host-supplied LLM interface
+
+Hosts that implement LLM review use `LocalLLMProvider` from
+`posejdon.detectors.llm_review`. The protocol exposes `probe_availability`,
+`provider_id`, `runtime_model_id`, `review`, and `verify_anonymization`.
+Posejdon supplies structured response models, not a concrete LLM client.
+`TextAnonymizer` does not accept or invoke this provider.
+
+The host owns runtime, transport, client construction, response validation,
+and invocation. It must check provider readiness before requests. Unavailability
+must be reported explicitly; review and verification failures must raise instead of
+returning empty success responses or switching clients. Settings such as
+`llm_provider` and `llm_model` do not construct a client in this package.
+The embedded MLX runtime was removed in issue #65. Do not restore its imports,
+compatibility aliases, or automatic fallbacks.
+
 ## Fallback policy
 
 Runtime compatibility and degraded-execution paths are recorded in
@@ -89,6 +105,7 @@ clearly when unavailable; Posejdon does not silently claim success with reduced 
 
 ```bash
 uv run --group dev pytest
+uv run --group dev ruff check .
 ```
 
 The existing `dev` extra remains supported: `uv run --extra dev pytest`.
