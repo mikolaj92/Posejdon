@@ -13,5 +13,6 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
-      - run: uv run --group dev pytest
-      - run: uv run --group dev ruff check .
+      - run: uv lock --check
+      - run: uv run --locked --group dev pytest
+      - run: uv run --locked --group dev ruff check .
