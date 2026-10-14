@@ -32,7 +32,7 @@ detectors = [
   "gliner>=0.2.22",
 ]
 spacy = [
-  "spacy>=3.8.7",
+  "spacy>=3.8.16",
 ]
 
 [build-system]
