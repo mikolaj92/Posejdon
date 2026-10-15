@@ -1,0 +1,53 @@
+{
+  "repo": "mikolaj92/Posejdon",
+  "issue": 83,
+  "parent": 78,
+  "branch": "lokay/83",
+  "source_sha": "2c229f8aea4244c72f0c1e82ad261f11d57cbf59",
+  "host": "mini-m4-0.localdomain",
+  "pr": null,
+  "verdict": "KEEP",
+  "reasons": [
+    "BRAK_KONTRAKTU_HOSTA",
+    "BRAK_DOWODU",
+    "BRAK_DEFINICJI_REPLAY",
+    "BRAK_IZOLACJI",
+    "BRAK_LISTY_CI",
+    "BRAK_WYNIKU_CI"
+  ],
+  "local_checks": {
+    "uv_lock_check": "PASS",
+    "pytest": {"passed": 214, "failed": 0, "skipped": 0},
+    "ruff": "PASS"
+  },
+  "remote_checks": {
+    "open_branch_prs": 0,
+    "pulls_http": 200,
+    "main_protection_http": 401,
+    "main_effective_rules_http": 200,
+    "main_effective_rules": [],
+    "required_total": null,
+    "passed": null,
+    "run_ids": null
+  },
+  "replay": {
+    "executed": 0,
+    "total": null,
+    "run_ids": null,
+    "receipt_id": null,
+    "isolation": null
+  },
+  "parent_state": {
+    "skipped": null,
+    "limbo": null,
+    "needs_human": null,
+    "resumptions": null
+  },
+  "findings": [
+    "No host receipt contract, recovery implementation, operational receipt or fleet replay runner found in this checkout.",
+    "Local .lokay/localize.json identifies issue 46 and a different checkout; it is not evidence for issue 83.",
+    "AGENTS.md assigns Posejdon the anonymization/correlation domain, not fleet orchestration; recovery ownership is unconfirmed.",
+    "No production defect established. Production code, manifests, lock, tests and parent state remain unchanged.",
+    "Local library checks do not establish host recovery or remote CI acceptance. The report commit requires final-SHA verification."
+  ]
+}
