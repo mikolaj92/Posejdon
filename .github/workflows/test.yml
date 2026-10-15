@@ -10,6 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Validate host operations artifact
+        run: |
+          git rev-parse HEAD
+          sha256sum docs/host-ops-83.json
+          python3 -m json.tool docs/host-ops-83.json
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
