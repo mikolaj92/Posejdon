@@ -24,11 +24,6 @@ class StructureCoverage(StrEnum):
 
 @dataclass(frozen=True)
 class StructureSnapshot:
-    """Domain-neutral mechanical structure supplied by a document host.
-
-    Posejdon core compares these facts. It never opens DOCX, ZIP, OPC or XML.
-    """
-
     coverage: StructureCoverage
     part_names: tuple[str, ...]
     relationship_types: tuple[str, ...]
