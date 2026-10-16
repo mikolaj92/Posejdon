@@ -13,3 +13,4 @@ storage/*.sqlite3
 *.pyo
 *.pyd
 .DS_Store
+.lokay/
