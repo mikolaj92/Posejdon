@@ -102,7 +102,7 @@ def test_detector_summary_exposes_spacy_state() -> None:
 
 def test_settings_expose_spacy_flags() -> None:
     settings = PosejdonSettings()
-    assert settings.enable_spacy is True
+    assert settings.enable_spacy is False
     assert settings.require_spacy is False
 
 
@@ -211,7 +211,7 @@ def test_settings_match_library_facade_by_default() -> None:
     assert settings.llm_required is False
     assert settings.enable_presidio is False
     assert settings.require_presidio is False
-    assert settings.enable_gliner is True
-    assert settings.enable_spacy is True
+    assert settings.enable_gliner is False
+    assert settings.enable_spacy is False
     assert settings.require_gliner is False
     assert settings.require_spacy is False

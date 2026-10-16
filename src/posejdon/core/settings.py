@@ -41,8 +41,8 @@ class PosejdonSettings(BaseSettings):
         le=4096,
     )
     enable_presidio: bool = False
-    enable_gliner: bool = True
-    enable_spacy: bool = True
+    enable_gliner: bool = False
+    enable_spacy: bool = False
     require_presidio: bool = False
     require_gliner: bool = False
     require_spacy: bool = False
