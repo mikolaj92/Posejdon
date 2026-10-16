@@ -5,6 +5,7 @@ description = "Polish-first text anonymization package using regex validators an
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
 license = { text = "MIT" }
+classifiers = ["Typing :: Typed"]
 authors = [
   { name = "Posejdon contributors" }
 ]
