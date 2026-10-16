@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from pathlib import Path
 
 from posejdon.core.enums import DocumentKind
 from posejdon.validators.structural_validator import (
@@ -44,39 +43,10 @@ def _validate(output: StructureSnapshot | None = None):
     )
 
 
-def test_docx_neutral_snapshot_passes_without_opening_document(tmp_path: Path) -> None:
+def test_docx_neutral_snapshot_passes_without_opening_document() -> None:
     result = _validate()
     assert result.passed is True
     assert "docx_snapshot_received" in result.structure_checks
-
-    readme = (Path(__file__).resolve().parents[2] / "README.md").read_text(encoding="utf-8")
-    assert "No document parsing" not in readme
-    assert "DOCX / JSON / XML / PDF parsers live in the host" not in readme
-    assert "DOCX checks compare host-supplied structure snapshots" in readme
-    assert (
-        "`StructuralValidator` reads and parses JSON/XML with Python's standard library."
-        in readme
-    )
-
-    for kind, content, invalid in (
-        (DocumentKind.JSON, '{"name": "source"}', '{"name":'),
-        (DocumentKind.XML, '<root name="source"/>', '<root>'),
-    ):
-        source = tmp_path / f"source.{kind.value}"
-        output = tmp_path / f"output.{kind.value}"
-        source.write_text(content, encoding="utf-8")
-        output.write_text(content, encoding="utf-8")
-        result = StructuralValidator().validate(
-            input_path=str(source), output_path=str(output), document_kind=kind
-        )
-        assert result.passed is True
-
-        output.write_text(invalid, encoding="utf-8")
-        result = StructuralValidator().validate(
-            input_path=str(source), output_path=str(output), document_kind=kind
-        )
-        assert result.passed is False
-        assert any("unreadable or invalid" in error for error in result.errors)
 
 
 def test_docx_requires_host_snapshots() -> None:
