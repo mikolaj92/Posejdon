@@ -67,12 +67,11 @@ from posejdon import TextAnonymizer
 anonymizer = TextAnonymizer(gliner_enabled=True)
 ```
 
-`TextAnonymizer` is regex-only unless you pass `gliner_enabled=True`. It never
-runs LLM review. Host runtime (`PosejdonSettings`, env prefix `POSEJDON_`)
-defaults match that facade: `enable_llm=false`, `llm_required=false`,
-`enable_presidio=false`. GLiNER and spaCy stay enabled for hosts that opt into
-those extras; Argus still requires them with `POSEJDON_REQUIRE_GLINER=true` /
-`POSEJDON_REQUIRE_SPACY=true`.
+`PosejdonSettings` defaults to `enable_gliner=false` and `enable_spacy=false`.
+Set `POSEJDON_ENABLE_GLINER=true` or `POSEJDON_ENABLE_SPACY=true` to enable
+that settings flag. These flags do not configure `TextAnonymizer`: GLiNER
+requires `gliner_enabled=True`, and spaCy is not connected to the facade.
+The facade uses regex by default; it does not invoke Presidio or LLM review.
 
 LLM prompt YAML ships inside the wheel (`posejdon/prompts/`). The registry
 loads it via `importlib.resources`; it does not search CWD. Override the
