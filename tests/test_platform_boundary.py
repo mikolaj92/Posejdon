@@ -78,20 +78,10 @@ def test_posejdon_has_no_platform_dependencies() -> None:
     assert not found, f"platform dependencies belong in the host application: {sorted(found)}"
 
 
-def test_documented_host_bom_uses_tags_and_states_latest_compat_row() -> None:
+def test_readme_does_not_duplicate_host_versions_or_track_closed_ui_issue() -> None:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    host_tags = {
-        "app-factory": "v0.6.11",
-        "my-auth": "v0.4.6",
-        "my-usermanager": "v0.5.8",
-    }
 
-    for package, tag in host_tags.items():
-        assert f"github.com/mikolaj92/{package}/releases/tag/{tag}" in readme
-
-    assert "app-factory/blob/main/COMPAT.md" in readme
-    assert "Latest COMPAT row" in readme
-    assert "v0.6.12" in readme
-    assert "is the latest COMPAT row" not in readme
-    assert "v0.6.5" not in readme
-    assert "v0.5.19" not in readme
+    assert not re.search(r"host\s+BOM|Production host tag|Latest COMPAT row", readme, re.I)
+    assert not re.search(r"#16\b|/issues/16\b", readme)
+    for package in ("app-factory", "my-auth", "my-usermanager"):
+        assert f"github.com/mikolaj92/{package}/releases/tag/" not in readme
