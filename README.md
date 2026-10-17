@@ -16,7 +16,7 @@ are rejected and belong to the host. Leakage checks use host-supplied text segme
 
 ## Host application boundary
 
-Posejdon is an anonymization library. It intentionally does not provide a web server, FastAPI routes, HTML templates, `product_shell`, authentication/account/admin screens, or frontend assets. This section documents the package boundary only; it does not implement or complete the host UI work tracked in issue #16.
+Posejdon is an anonymization library. It intentionally does not provide a web server, FastAPI routes, HTML templates, `product_shell`, authentication/account/admin screens, or frontend assets.
 
 The host integration contract is:
 
@@ -26,22 +26,7 @@ The host integration contract is:
 - keep HTMX state on the server: mutation routes return server-rendered HTML using the same partials as full-page responses, with stable `id`/`hx-target` pairs and explicit swaps;
 - limit Alpine to component-local presentation state for toggles, menus, dialogs, and disclosures; do not put server data, business rules, or validation in Alpine stores;
 - keep menus and dialogs keyboard accessible, including focus management, Escape handling, and accurate `aria-expanded`/`aria-controls` state;
-- keep links and forms functional without JavaScript where practical; do not return JSON for client-side rendering of product or platform chrome;
-- keep the platform BOM aligned with the app-factory COMPAT row.
-
-The current host BOM (Anonimizator3000):
-
-| Component | Production host tag |
-| --- | --- |
-| app-factory | [`v0.6.11`](https://github.com/mikolaj92/app-factory/releases/tag/v0.6.11) |
-| my-auth | [`v0.4.6`](https://github.com/mikolaj92/my-auth/releases/tag/v0.4.6) |
-| my-usermanager | [`v0.5.8`](https://github.com/mikolaj92/my-usermanager/releases/tag/v0.5.8) |
-
-These are the three tags pinned by Anonimizator3000. Posejdon has no platform dependency or source entry, so its `pyproject.toml` and `uv.lock` intentionally contain none of these packages; adding host pins here would violate the package boundary.
-
-The current FastAPI host is [Anonimizator3000](https://github.com/mikolaj92/anonimizator3000). Product shell, login, account, and admin behavior must be implemented and smoke-tested there. Posejdon remains host-agnostic: adding platform dependencies or an unconsumed `platform_ui` module here would create a second, non-functional integration.
-
-Compatibility source: [app-factory COMPAT.md](https://github.com/mikolaj92/app-factory/blob/main/COMPAT.md). Latest COMPAT row: app-factory `v0.6.12` / my-auth `v0.4.6` / my-usermanager `v0.5.8`.
+- keep links and forms functional without JavaScript where practical; do not return JSON for client-side rendering of product or platform chrome.
 
 ## Usage
 
@@ -67,12 +52,11 @@ from posejdon import TextAnonymizer
 anonymizer = TextAnonymizer(gliner_enabled=True)
 ```
 
-`TextAnonymizer` is regex-only unless you pass `gliner_enabled=True`. It never
-runs LLM review. Host runtime (`PosejdonSettings`, env prefix `POSEJDON_`)
-defaults match that facade: `enable_llm=false`, `llm_required=false`,
-`enable_presidio=false`. GLiNER and spaCy stay enabled for hosts that opt into
-those extras; Argus still requires them with `POSEJDON_REQUIRE_GLINER=true` /
-`POSEJDON_REQUIRE_SPACY=true`.
+`PosejdonSettings` defaults to `enable_gliner=false` and `enable_spacy=false`.
+Set `POSEJDON_ENABLE_GLINER=true` or `POSEJDON_ENABLE_SPACY=true` to enable
+that settings flag. These flags do not configure `TextAnonymizer`: GLiNER
+requires `gliner_enabled=True`, and spaCy is not connected to the facade.
+The facade uses regex by default; it does not invoke Presidio or LLM review.
 
 LLM prompt YAML ships inside the wheel (`posejdon/prompts/`). The registry
 loads it via `importlib.resources`; it does not search CWD. Override the
@@ -106,8 +90,7 @@ clearly when unavailable; Posejdon does not silently claim success with reduced 
 Audited source: `c121fef9835ad30ac7fcd26d876eabac51d564c7` on `lokay/82`.
 The table describes the resulting `uv.lock` after raising spaCy's minimum to
 3.8.16. Only `pyproject.toml`, `uv.lock`, and `.github/workflows/test.yml` are
-active dependency/CI inputs in this checkout. Host BOM tags above are not wheel
-requirements.
+active dependency/CI inputs in this checkout.
 
 **Confirmed audited remnants: 2 distinct packages** (`httpx`, `spacy-legacy`),
 not a security finding or a claim that the entire tree is legacy-free.
