@@ -145,7 +145,7 @@ class StructuralValidator:
         checks: list[str],
     ) -> None:
         errors.append(
-            "PDF structure checks belong to the host; the library does not parse documents"
+            "PDF structure checks belong to the host; the library does not parse PDF"
         )
         checks.append("pdf_rejected_in_library")
 
