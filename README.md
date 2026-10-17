@@ -8,11 +8,11 @@ Scope:
 - checksum validators for identifiers
 - optional GLiNER recognizer
 
-No document parsing. No web server. No queue.
+No web server. No queue.
 
-Leakage and structural checks take host-supplied text segments or stdlib
-DOCX zip snapshots. DOCX / JSON / XML / PDF parsers live in the host
-(`posejdon-docs` / Docxtor), not in this wheel.
+`StructuralValidator` reads and parses JSON/XML with Python's standard library.
+DOCX checks compare host-supplied structure snapshots; PDF structure checks
+are rejected and belong to the host. Leakage checks use host-supplied text segments.
 
 ## Host application boundary
 
