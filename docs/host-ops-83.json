@@ -31,12 +31,5 @@
     "before": {"skipped": null, "limbo": null, "needs_human": null, "resumptions": null},
     "after": {"skipped": null, "limbo": null, "needs_human": null, "resumptions": null}
   },
-  "review": {
-    "source_comment_ids": [6197252277, 6197461385],
-    "alignment": "OPEN: no independent host contract, receipt, isolated runner or operational measurements in this checkout; library checks do not establish recovery.",
-    "correctness": "REJECTED at source_sha: python3 -m json.tool parsed the entire current file successfully; no syntax defect reproduced.",
-    "scope": "RESOLVED: the execution plan explicitly includes this existing artifact; no production defect or CI failure justifies changing library code or pins.",
-    "docs": "RESOLVED: condensed this existing artifact to measurement identity, evidence, unknown states and review dispositions."
-  },
   "final_sha_verification": "Measurements apply only to source_sha. Any report commit requires fresh local, remote CI and operational verification; KEEP is not completion."
 }
