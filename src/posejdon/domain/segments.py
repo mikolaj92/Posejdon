@@ -1,5 +1,3 @@
-"""Host-supplied text segments. The library does not parse documents (#54)."""
-
 from __future__ import annotations
 
 from pydantic import BaseModel
